@@ -80,7 +80,7 @@ For a desktop display such as the SRD, set `XR_SCEMU_POSITION` to the center of 
 - **Input**: `xrSyncActions` is passed through, and every visible container is interactable while the runtime session is focused.
 - **Single instance**: Space location filtering assumes one `XrInstance` per process.
 - **Native support**: Do not enable the layer on a runtime that implements the extensions itself.
-- **Windows**: The Windows code paths compile in principle but have not been built or run yet. The layer has only been tested on Linux, against the mock runtime below.
+- **Windows**: The layer cross-compiles for Windows with MinGW-w64 without warnings, but has not been built with MSVC or run on Windows yet. It has only been tested on Linux, against the mock runtime below.
 
 ## Tests
 
