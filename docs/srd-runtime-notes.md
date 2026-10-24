@@ -48,7 +48,7 @@ This approach reuses the current rendering path almost unchanged and only adapts
   - **`shouldSubmitLayers = false`**: Returned when no valid view can be produced on screen (for example, when the container is off screen). Whether to return this when eye tracking is lost, or to keep using the last pose, is a runtime policy decision.
   - **Decaying view configurations**: The spec allows decaying stereo to mono (the number of views stays the same, with the extra views filled with duplicates).
 - **Submitting layers**: Layers are submitted per container by chaining `XrSpatialContainerLayerFrameEndInfoEXT` to `xrEndFrame`. A non-zero `layerCount` in the frame end info itself is an error.
-- **Clipping outside the bounds**: `XrSpatialContainerLayerVolumeClippingEXT` (NONE / STRICT) can be specified. Content outside the display volume tends to be hard to view, so implementing STRICT first seems worthwhile.
+- **Clipping outside the bounds**: The runtime must discard pixels outside the *2D pixel bounds* (the projection of the container volume onto the display), but must not discard pixels that are inside the 2D pixel bounds yet outside the *3D volume*. Clipping to the 3D volume is the app's choice. `XrSpatialContainerLayerVolumeClippingEXT` (NONE / STRICT) is a hint in which the app reports what it did. With STRICT, the runtime may, for example, draw the rear faces of the volume. Depth paradoxes cause eye strain, which matters on a stereoscopic desktop display, so deciding how the SRD presents NONE content is worth doing early.
 
 ## 5. Mapping visibility and focus to Windows
 
@@ -69,6 +69,10 @@ Placing containers from multiple apps in the display volume of a single SRD requ
 ## 7. Conformance testing (CTS)
 
 The Issues section of the spec says that a separate, CTS-only test extension will be defined so that CTS can control behavior that depends on runtime policy. Check it when working on CTS support.
+
+## See also
+
+- [runtime-checklist.md](runtime-checklist.md): normative requirements of both extensions, as a checklist for runtime implementers.
 
 ## What this sample lets you check
 
