@@ -1,47 +1,47 @@
 # SRD Container Viewer
 
-`XR_EXT_spatial_container` を使った Godot 製の 3D モデルビューアのサンプルです。
+A 3D model viewer sample for `XR_EXT_spatial_container`, built with Godot.
 
-| モード | 表示 |
+| Mode | Behavior |
 |---|---|
-| bounded | ランタイムが返すコンテナの大きさに合わせてモデルを自動縮小し、ゆっくり回転させる。コンテナの境界をワイヤーフレームで表示する |
-| immersive | モデルを実寸（1 unit = 1 m）で、ユーザーの 1 m 前に表示する |
+| bounded | Scales the model to fit the container bounds reported by the runtime and spins it slowly. The container bounds are drawn as a wireframe box. |
+| immersive | Shows the model at real scale (1 unit = 1 m), 1 m in front of the user. |
 
-拡張に対応していないランタイム（OpenXR 1.0 の既存ランタイムなど）では、プロジェクト設定の境界（`xr/openxr/extensions/spatial_container/bounds`）を仮想コンテナとして使う**エミュレーションモード**で動きます。
+On runtimes without the extension (such as existing OpenXR 1.0 runtimes), the viewer runs in **emulation mode**, using the bounds from the project setting `xr/openxr/extensions/spatial_container/bounds` as a virtual container.
 
-## 必要なもの
+## Requirements
 
-- Godot **4.8 以降**（`OpenXRSpatialContainerExtension` は 4.8-dev7 で確認済み）
-- OpenXR ランタイム（Windows で SRD を使う場合は SRD のランタイム）
+- Godot **4.8 or later** (`OpenXRSpatialContainerExtension` confirmed in 4.8-dev7)
+- An OpenXR runtime (the SRD runtime when using an SRD on Windows)
 
-## 実行
+## Running
 
 ```
 godot --path . -- --model=C:/path/to/model.glb
 ```
 
-- `--model=` を省略すると、組み込みの簡単なモデルを表示します。
-- 実行中に `.glb` / `.gltf` を Godot のウィンドウにドラッグ＆ドロップすると、そのモデルに差し替えます。
+- Without `--model=`, a simple built-in model is shown.
+- Drag and drop a `.glb` / `.gltf` file onto the Godot window while running to replace the model.
 
-## 操作
+## Controls
 
-| キー / ボタン | 動作 |
+| Key / button | Action |
 |---|---|
-| Space / Enter、コントローラの A/X またはトリガー | bounded ⇔ immersive の切り替えを要求 |
-| 矢印キー、スティック | モデルを回転（触ると自動回転が止まる） |
-| `+` / `-` | 拡大・縮小（immersive 時） |
-| R | 表示をリセット |
-| B | 境界ボックスの表示を切り替え |
+| Space / Enter, controller A/X or trigger | Request a switch between bounded and immersive |
+| Arrow keys, thumbstick | Rotate the model (stops auto-spin) |
+| `+` / `-` | Zoom in / out (immersive) |
+| R | Reset the view |
+| B | Toggle the bounds box |
 
-## 実装のポイント
+## Implementation notes
 
-- **起動の流れ**：Godot はセッション作成時にメインのコンテナを1つ自動で作ります。そのときの設定は project.godot の `bounds_mode` と `bounds` です。
-- **座標系**：bounded の間は、Godot がコンテナの空間をプレイスペースとして使います。そのため `XROrigin3D` の原点がコンテナの中心になります。immersive になると通常のプレイスペースに戻るので、コンテンツを `immersive_offset` の位置に置き直しています。
-- **フィットの計算**：モデルを囲む球の直径を、コンテナの一番短い辺 × `fill_ratio` に合わせます。どの向きに回しても箱からはみ出しませんが、そのぶん小さめに表示されます。
-- **非同期の要求**：モード切り替えの要求は非同期です。結果は `spatial_container_bounds_changed`（成功）か `spatial_container_bounds_mode_request_denied`（拒否）のシグナルで届きます。表示の切り替えは、このシグナルを受けてから行います。
-- **非表示中**：コンテナが見えていない間は `_process` を止めます。仕様でも、非表示中は CPU と GPU の負荷を止めることが期待されています。
-- **状態の表示**：`Label3D` に、拡張の状態（有効かエミュレーションか）、モード、境界の大きさ、visible / interactable を表示します。ランタイム側をデバッグするときの目視確認に使えます。
+- **Startup**: Godot automatically creates one main container when the session is created, using `bounds_mode` and `bounds` from project.godot.
+- **Coordinate system**: While bounded, Godot uses the container space as the play space, so the `XROrigin3D` origin is the container center. In immersive mode Godot switches back to the regular play space, so the content is moved to `immersive_offset`.
+- **Fitting**: The diameter of the model's bounding sphere is matched to the shortest side of the container times `fill_ratio`. The model never leaves the box at any rotation, at the cost of appearing somewhat smaller.
+- **Asynchronous requests**: Bounds mode requests are asynchronous. The result arrives as the `spatial_container_bounds_changed` signal (success) or `spatial_container_bounds_mode_request_denied` (denied), and the layout is updated only after the signal arrives.
+- **While hidden**: `_process` is stopped while the container is not visible. The spec also expects apps to stop CPU and GPU work while hidden.
+- **Status display**: A `Label3D` shows the extension state (active or emulated), the mode, the bounds size, and visible / interactable. This is useful for visually checking a runtime while debugging it.
 
-## SRD ランタイム向けのメモ
+## Notes for the SRD runtime
 
-[docs/srd-runtime-notes.md](../../docs/srd-runtime-notes.md) を参照してください。
+See [docs/srd-runtime-notes.md](../../docs/srd-runtime-notes.md).
