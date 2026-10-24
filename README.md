@@ -18,4 +18,4 @@ OpenXR の Spatial Containers（`XR_EXT_spatial_container` / `XR_EXT_spatial_con
 
 ## ライセンス
 
-未定です（オーナーが決めます）。
+[MIT License](LICENSE)
