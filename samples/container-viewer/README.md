@@ -21,6 +21,8 @@ godot --path . -- --model=C:/path/to/model.glb
 ```
 
 - Without `--model=`, a simple built-in model is shown.
+- `--offset=x,y,z` sets where the content is placed (meters, in the play space) in immersive mode and in emulation mode. The default is `0,0,-1`. On a desktop display such as the SRD, the default is likely outside the display volume, so adjust it with the keys below and pass the printed value next time.
+- `--bounds=x,y,z` sets the size of the virtual container in emulation mode (meters). It has no effect when the runtime supports the extension.
 - Drag and drop a `.glb` / `.gltf` file onto the Godot window while running to replace the model.
 
 ## Controls
@@ -32,6 +34,9 @@ godot --path . -- --model=C:/path/to/model.glb
 | `+` / `-` | Zoom in / out (immersive) |
 | R | Reset the view |
 | B | Toggle the bounds box |
+| J / L, U / O, I / K | Move the content 1 cm left / right, down / up, forward / back (immersive and emulation). The new value is printed as `--offset=...` |
+
+While the extension is active, input is accepted only when the runtime reports the container as interactable, as the spec leaves input routing to the runtime. In emulation mode input is always accepted.
 
 ## Implementation notes
 
@@ -40,7 +45,8 @@ godot --path . -- --model=C:/path/to/model.glb
 - **Fitting**: The diameter of the model's bounding sphere is matched to the shortest side of the container times `fill_ratio`. The model never leaves the box at any rotation, at the cost of appearing somewhat smaller.
 - **Asynchronous requests**: Bounds mode requests are asynchronous. The result arrives as the `spatial_container_bounds_changed` signal (success) or `spatial_container_bounds_mode_request_denied` (denied), and the layout is updated only after the signal arrives.
 - **While hidden**: `_process` is stopped while the container is not visible. The spec also expects apps to stop CPU and GPU work while hidden.
-- **Status display**: A `Label3D` shows the extension state (active or emulated), the mode, the bounds size, and visible / interactable. This is useful for visually checking a runtime while debugging it.
+- **Input routing**: With the extension, keyboard and controller input is ignored unless the container is interactable.
+- **Status display**: A `Label3D` shows the extension state (active or emulated), the mode, the bounds size, visible / interactable, and the content offset when it applies. This is useful for visually checking a runtime while debugging it.
 
 ## Notes for the SRD runtime
 

@@ -10,11 +10,13 @@ extends Node3D
 @export_range(0.1, 1.0) var fill_ratio := 0.9
 ## Auto spin speed in bounded mode (degrees per second).
 @export var spin_speed := 15.0
-## Where the content goes when the play space is not the container space.
+## Where the content goes when the play space is not the container space
+## (immersive mode and emulation). Can be overridden with --offset=x,y,z.
 @export var immersive_offset := Vector3(0, 0, -1.0)
 
 const ROTATE_SPEED := 90.0 # degrees per second
 const ZOOM_STEP := 1.1
+const OFFSET_STEP := 0.01 # meters
 
 var xr_interface: OpenXRInterface
 var container_ext_active := false
@@ -60,6 +62,13 @@ func _ready() -> void:
 	else:
 		print("Spatial container extension not available, emulating a bounded container.")
 		bounds = ProjectSettings.get_setting("xr/openxr/extensions/spatial_container/bounds")
+		var bounds_arg = _vector3_from_cmdline("--bounds=")
+		if bounds_arg != null:
+			bounds = bounds_arg
+
+	var offset_arg = _vector3_from_cmdline("--offset=")
+	if offset_arg != null:
+		immersive_offset = offset_arg
 
 	for controller: XRController3D in [$XROrigin3D/LeftController, $XROrigin3D/RightController]:
 		controller.button_pressed.connect(_on_controller_button_pressed)
@@ -73,12 +82,15 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	var yaw := Input.get_axis("ui_left", "ui_right")
-	var pitch := Input.get_axis("ui_up", "ui_down")
-	for controller: XRController3D in [$XROrigin3D/LeftController, $XROrigin3D/RightController]:
-		var stick := controller.get_vector2("primary")
-		yaw += stick.x
-		pitch -= stick.y
+	var yaw := 0.0
+	var pitch := 0.0
+	if _accepts_input():
+		yaw = Input.get_axis("ui_left", "ui_right")
+		pitch = Input.get_axis("ui_up", "ui_down")
+		for controller: XRController3D in [$XROrigin3D/LeftController, $XROrigin3D/RightController]:
+			var stick := controller.get_vector2("primary")
+			yaw += stick.x
+			pitch -= stick.y
 	if absf(yaw) > 0.1 or absf(pitch) > 0.1:
 		auto_spin = false
 	if auto_spin and _is_bounded():
@@ -90,7 +102,20 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not event is InputEventKey or not event.pressed or event.echo:
+	if not event is InputEventKey or not event.pressed or not _accepts_input():
+		return
+	# Offset nudging repeats while held; other keys act once per press.
+	var nudge: Vector3 = {
+		KEY_J: Vector3.LEFT, KEY_L: Vector3.RIGHT,
+		KEY_U: Vector3.DOWN, KEY_O: Vector3.UP,
+		KEY_I: Vector3.FORWARD, KEY_K: Vector3.BACK,
+	}.get(event.keycode, Vector3.ZERO)
+	if nudge != Vector3.ZERO:
+		immersive_offset += nudge * OFFSET_STEP
+		print("Offset: --offset=%.2f,%.2f,%.2f" % [immersive_offset.x, immersive_offset.y, immersive_offset.z])
+		_apply_layout()
+		return
+	if event.echo:
 		return
 	match event.keycode:
 		KEY_SPACE, KEY_ENTER:
@@ -112,8 +137,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_controller_button_pressed(button: String) -> void:
+	if not _accepts_input():
+		return
 	if button == "ax_button" or button == "trigger_click":
 		_toggle_bounds_mode()
+
+
+## The spec lets the runtime decide which containers receive input.
+## In emulation there is no runtime policy, so input is always accepted.
+func _accepts_input() -> bool:
+	return interactable or not container_ext_active
 
 
 # --- Spatial container lifecycle -------------------------------------------------
@@ -236,10 +269,24 @@ func _update_status() -> void:
 		lines.append("bounds: %.2f x %.2f x %.2f m" % [bounds.x, bounds.y, bounds.z])
 	if container_ext_active:
 		lines.append("visible: %s  interactable: %s" % [visible_state, interactable])
+	if container_root.position != Vector3.ZERO:
+		lines.append("offset: %.2f, %.2f, %.2f m" % [immersive_offset.x, immersive_offset.y, immersive_offset.z])
 	status_label.text = "\n".join(lines)
 
 
 # --- Model loading ---------------------------------------------------------------
+
+## Parses "--name=x,y,z" from the user command line arguments. Returns null if absent or invalid.
+func _vector3_from_cmdline(prefix: String) -> Variant:
+	for arg in OS.get_cmdline_user_args():
+		if not arg.begins_with(prefix):
+			continue
+		var parts := arg.trim_prefix(prefix).split(",")
+		if parts.size() == 3 and Array(parts).all(func(p: String) -> bool: return p.strip_edges().is_valid_float()):
+			return Vector3(parts[0].to_float(), parts[1].to_float(), parts[2].to_float())
+		push_warning("Ignoring invalid argument: " + arg)
+	return null
+
 
 func _model_path_from_cmdline() -> String:
 	for arg in OS.get_cmdline_user_args():
