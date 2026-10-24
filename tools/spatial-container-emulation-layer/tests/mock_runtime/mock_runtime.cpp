@@ -139,6 +139,14 @@ XrResult XRAPI_CALL EnumerateViewConfigurationViews(XrInstance, XrSystemId, XrVi
     return XR_SUCCESS;
 }
 
+XrResult XRAPI_CALL EnumerateEnvironmentBlendModes(XrInstance, XrSystemId, XrViewConfigurationType, uint32_t capacity,
+                                                   uint32_t* count, XrEnvironmentBlendMode* modes) {
+    *count = 1;
+    if (capacity == 0) return XR_SUCCESS;
+    modes[0] = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+    return XR_SUCCESS;
+}
+
 XrResult XRAPI_CALL CreateSession(XrInstance, const XrSessionCreateInfo* info, XrSession* session) {
     std::lock_guard<std::mutex> lock(g_mutex);
     if (HasContainerStruct(info->next)) {
@@ -279,6 +287,7 @@ XrResult XRAPI_CALL GetInstanceProcAddr(XrInstance, const char* name, PFN_xrVoid
     ENTRY(GetSystemProperties)
     ENTRY(EnumerateViewConfigurations)
     ENTRY(EnumerateViewConfigurationViews)
+    ENTRY(EnumerateEnvironmentBlendModes)
     ENTRY(CreateSession)
     ENTRY(DestroySession)
     ENTRY(BeginSession)
