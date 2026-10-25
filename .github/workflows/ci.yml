@@ -63,23 +63,22 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v5
-      - name: Build emulation layer
+      - name: Build
+        # The C++ sample also builds the emulation layer and the unit tests.
         run: |
-          cmake -S tools/spatial-container-emulation-layer -B build-layer -DSCEMU_BUILD_TESTS=OFF
-          cmake --build build-layer --config Release
-      - name: Build C++ sample
-        run: |
-          cmake -S samples/cpp-minimal -B build-sample -DCPPMIN_BUILD_TESTS=OFF
-          cmake --build build-sample --config Release
+          cmake -S samples/cpp-minimal -B build
+          cmake --build build --config Release
+      - name: Unit tests
+        run: ctest --test-dir build -C Release --output-on-failure
       - name: Upload binaries
         uses: actions/upload-artifact@v5
         with:
           name: windows-binaries
           path: |
-            build-layer/Release/XrApiLayer_spatial_container_emulation.dll
-            build-layer/Release/XrApiLayer_spatial_container_emulation.json
-            build-sample/Release/cpp_minimal.exe
-            build-sample/Release/openxr_loader.dll
+            build/emulation_layer/Release/XrApiLayer_spatial_container_emulation.dll
+            build/emulation_layer/Release/XrApiLayer_spatial_container_emulation.json
+            build/Release/cpp_minimal.exe
+            build/Release/openxr_loader.dll
           if-no-files-found: error
 
   godot:
@@ -103,6 +102,9 @@ jobs:
             "$GODOT" --headless --path . --check-only --script "$script" 2>&1 | tee check.log
             if grep -E "SCRIPT ERROR|Parse Error" check.log; then exit 1; fi
           done
+      - name: Unit tests
+        working-directory: samples/container-viewer
+        run: '"$GODOT" --headless --path . -s res://tests/run_tests.gd'
 
   lint:
     name: Lint and static analysis

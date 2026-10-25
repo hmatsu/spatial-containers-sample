@@ -50,6 +50,17 @@ While the extension is active, input is accepted only when the runtime reports t
 - **Input routing**: With the extension, keyboard and controller input is ignored unless the container is interactable.
 - **Status display**: A `Label3D` shows the extension state (active or emulated), the mode, the bounds size, visible / interactable, and the content offset when it applies. This is useful for visually checking a runtime while debugging it.
 
+## Tests
+
+[tests/run_tests.gd](tests/run_tests.gd) unit-tests `main.gd` without an XR runtime. It covers argument parsing, fitting at any rotation, scale, centering, placement with and without the extension, the bounds box, glTF loading, bounds events, input gating, offset nudging, pausing while hidden, and the status label.
+
+```sh
+godot --headless --path . --import
+godot --headless --path . -s res://tests/run_tests.gd
+```
+
+The exit code is the number of failed tests.
+
 ## Notes for the SRD runtime
 
 See [docs/srd-runtime-notes.md](../../docs/srd-runtime-notes.md).

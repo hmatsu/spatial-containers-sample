@@ -52,7 +52,7 @@ The sample uses `XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY`. If your runtime reports a
 
 ## Tests
 
-On Linux, `ctest` runs the sample headless through the emulation layer and its mock runtime. The test passes when the log shows the full lifecycle in order: shown, both mode switches, hidden on request, and a clean shutdown. The layer's own tests run as well.
+`ctest` runs unit tests of the matrix helpers ([tests/math_tests.cpp](tests/math_tests.cpp)) and the emulation layer's unit tests on every platform. On Linux, it also runs the sample headless through the emulation layer and its mock runtime. The test passes when the log shows the full lifecycle in order: shown, both mode switches, hidden on request, and a clean shutdown. The layer's own tests run as well.
 
 ```sh
 cmake -S . -B build

@@ -1,5 +1,28 @@
+# Unit tests of the stateless parts (layer_internal.h), on every platform.
+include(FetchContent)
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
+FetchContent_Declare(doctest
+    GIT_REPOSITORY https://github.com/doctest/doctest.git
+    GIT_TAG v2.5.3
+    GIT_SHALLOW TRUE)
+FetchContent_GetProperties(doctest)
+if(NOT doctest_POPULATED)
+    FetchContent_Populate(doctest)
+endif()
+# For parent projects (the C++ sample) that use doctest too.
+set(DOCTEST_INCLUDE_DIR "${doctest_SOURCE_DIR}" CACHE INTERNAL "doctest include directory")
+
+add_executable(layer_unit_tests unit_tests.cpp)
+target_include_directories(layer_unit_tests PRIVATE "${OPENXR_INCLUDE_DIR}")
+# SYSTEM: keep warnings and static analysis focused on our code.
+target_include_directories(layer_unit_tests SYSTEM PRIVATE "${doctest_SOURCE_DIR}")
+add_test(NAME layer_unit COMMAND layer_unit_tests)
+
+# End-to-end tests through the loader with the mock runtime use dlopen.
 if(NOT UNIX)
-    message(STATUS "Emulation layer tests are only set up for Linux; skipping.")
+    message(STATUS "Emulation layer end-to-end tests are only set up for Linux; skipping.")
     return()
 endif()
 

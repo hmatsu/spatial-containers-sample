@@ -42,10 +42,19 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:openxr_loader> $<TARGET_FILE_DIR:cpp_minimal>)
 endif()
 
-if(CPPMIN_BUILD_TESTS AND UNIX)
+if(CPPMIN_BUILD_TESTS)
     enable_testing()
+    # Also builds the layer's unit tests, and on Linux its mock runtime and end-to-end tests.
     set(SCEMU_BUILD_TESTS ON CACHE BOOL "" FORCE)
     add_subdirectory(../../tools/spatial-container-emulation-layer emulation_layer)
+
+    add_executable(cpp_minimal_math_tests tests/math_tests.cpp)
+    target_include_directories(cpp_minimal_math_tests PRIVATE "${openxr_sdk_SOURCE_DIR}/include")
+    target_include_directories(cpp_minimal_math_tests SYSTEM PRIVATE "${DOCTEST_INCLUDE_DIR}")
+    add_test(NAME cpp_minimal_math COMMAND cpp_minimal_math_tests)
+endif()
+
+if(CPPMIN_BUILD_TESTS AND UNIX)
 
     add_test(NAME cpp_minimal_headless COMMAND cpp_minimal --headless --seconds 1 --toggle-seconds 0.3)
     set_tests_properties(cpp_minimal_headless PROPERTIES
