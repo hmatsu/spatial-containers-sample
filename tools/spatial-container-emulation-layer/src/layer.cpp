@@ -138,8 +138,8 @@ struct Session {
     XrDuration displayPeriod = 11111111;  // 90 Hz until the runtime reports otherwise.
     std::chrono::steady_clock::time_point lastEmulatedWait{};
     std::vector<XrSpatialContainerEXT> renderOrder;  // Active render set, in begin order.
-    uint32_t framesToRuntime = 0;          // Frames ended on the runtime.
-    uint32_t framesWithLayers = 0;         // ...of which carried container layers.
+    uint32_t framesToRuntime = 0;                    // Frames ended on the runtime.
+    uint32_t framesWithLayers = 0;                   // ...of which carried container layers.
 };
 
 struct Instance {
