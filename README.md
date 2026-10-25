@@ -26,9 +26,17 @@ Samples and research notes for experimenting with OpenXR Spatial Containers (`XR
 
 ## Checks
 
-CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) builds and tests the C++ code on Linux (also with ASan and UBSan) and with MSVC on Windows, checks and unit-tests the Godot viewer's scripts, and runs the linters.
+Three GitHub Actions workflows run the checks:
 
-| Tests | Where | Runs in CI on |
+| Workflow | What it runs | When | Time |
+|---|---|---|---|
+| [CI](.github/workflows/ci.yml) | C++ build and tests on Linux (also with ASan and UBSan) and with MSVC on Windows; the Godot viewer's script checks and unit tests | Every pull request and push to `main`, except changes to documentation or to the other workflows' files | About 2 minutes |
+| [Lint](.github/workflows/lint.yml) | Linters and static analysis | Every pull request and push to `main` | About 2 minutes |
+| [E2E](.github/workflows/e2e.yml) | The Godot viewer on Monado, in emulation and through the emulation layer | Pull requests and pushes to `main` that change the layer, the viewer or the test; twice a week on a schedule; manually | About 2 minutes, or about 30 when Godot has to be built |
+
+E2E builds Godot from a pinned commit and caches the build. The cache is built on `main`, so pull requests reuse it. The scheduled runs keep it from expiring (GitHub evicts caches not used for 7 days) and catch changes outside this repository, such as the runner image, Monado or Mesa. All three workflows can also be started by hand from the Actions tab.
+
+| Tests | Where | Runs on |
 |---|---|---|
 | Emulation layer unit tests (doctest) | [tools/spatial-container-emulation-layer/tests/unit_tests.cpp](tools/spatial-container-emulation-layer/tests/unit_tests.cpp) | Linux, Windows |
 | C++ sample math unit tests (doctest) | [samples/cpp-minimal/tests/math_tests.cpp](samples/cpp-minimal/tests/math_tests.cpp) | Linux, Windows |
