@@ -26,7 +26,7 @@ The layer also validates what the spec requires of runtimes: duplicate, missing,
 
 ## Building
 
-Requires CMake 3.16+ and a C++17 compiler. The OpenXR-SDK (release 1.1.65) is downloaded automatically, or you can point `OPENXR_SDK_SOURCE_DIR` at a local checkout.
+Requires CMake 3.16+ and a C++17 compiler. On Linux, building the tests also needs the X11 development headers (`libx11-dev` on Debian and Ubuntu), which the OpenXR-SDK requires. The OpenXR-SDK (release 1.1.65) is downloaded automatically, or you can point `OPENXR_SDK_SOURCE_DIR` at a local checkout.
 
 ```
 cmake -S . -B build

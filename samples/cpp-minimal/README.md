@@ -27,7 +27,7 @@ The graphics side is behind a small interface ([src/graphics.h](src/graphics.h))
 
 ## Building
 
-Requires CMake 3.16+ and a C++17 compiler (Visual Studio 2019 or later on Windows). The OpenXR-SDK (release 1.1.65) is downloaded and its loader built automatically, or you can point `OPENXR_SDK_SOURCE_DIR` at a local checkout.
+Requires CMake 3.16+ and a C++17 compiler (Visual Studio 2019 or later on Windows). On Linux, the OpenXR-SDK also needs the X11 development headers (`libx11-dev` on Debian and Ubuntu). The OpenXR-SDK (release 1.1.65) is downloaded and its loader built automatically, or you can point `OPENXR_SDK_SOURCE_DIR` at a local checkout.
 
 ```
 cmake -S . -B build
