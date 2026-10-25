@@ -102,7 +102,15 @@ run_viewer() {
     fi
 }
 
-"$godot" --headless --path "$viewer" --import > "$logs/import.log" 2>&1
+# Godot master can crash on exit after re-importing an already imported project; what
+# matters is that the import cache exists.
+if ! "$godot" --headless --path "$viewer" --import > "$logs/import.log" 2>&1; then
+    if [[ ! -d "$viewer/.godot/imported" ]]; then
+        echo "Project import failed; see $logs/import.log" >&2
+        exit 1
+    fi
+    echo "warning: Godot exited with an error after importing; continuing (see $logs/import.log)"
+fi
 start_monado
 
 run_viewer emulation 120 XR_API_LAYER_PATH= XR_ENABLE_API_LAYERS= --
