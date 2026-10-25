@@ -6,6 +6,10 @@ extends Node3D
 ## Without the extension (e.g. an OpenXR 1.0 runtime), a virtual container with the
 ## project setting bounds is emulated so the same app still works.
 
+const ROTATE_SPEED := 90.0  # degrees per second
+const ZOOM_STEP := 1.1
+const OFFSET_STEP := 0.01  # meters
+
 ## Fraction of the container the model's bounding sphere may fill.
 @export_range(0.1, 1.0) var fill_ratio := 0.9
 ## Auto spin speed in bounded mode (degrees per second).
@@ -14,15 +18,11 @@ extends Node3D
 ## (immersive mode and emulation). Can be overridden with --offset=x,y,z.
 @export var immersive_offset := Vector3(0, 0, -1.0)
 
-const ROTATE_SPEED := 90.0 # degrees per second
-const ZOOM_STEP := 1.1
-const OFFSET_STEP := 0.01 # meters
-
 var xr_interface: OpenXRInterface
 var container_ext_active := false
 
 var bounds_mode := OpenXRSpatialContainerState.BOUNDS_MODE_BOUNDED
-var bounds := Vector3.ZERO # Zero means infinite (immersive).
+var bounds := Vector3.ZERO  # Zero means infinite (immersive).
 var visible_state := false
 var interactable := false
 
@@ -105,11 +105,17 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or not _accepts_input():
 		return
 	# Offset nudging repeats while held; other keys act once per press.
-	var nudge: Vector3 = {
-		KEY_J: Vector3.LEFT, KEY_L: Vector3.RIGHT,
-		KEY_U: Vector3.DOWN, KEY_O: Vector3.UP,
-		KEY_I: Vector3.FORWARD, KEY_K: Vector3.BACK,
-	}.get(event.keycode, Vector3.ZERO)
+	var nudge: Vector3 = (
+		{
+			KEY_J: Vector3.LEFT,
+			KEY_L: Vector3.RIGHT,
+			KEY_U: Vector3.DOWN,
+			KEY_O: Vector3.UP,
+			KEY_I: Vector3.FORWARD,
+			KEY_K: Vector3.BACK,
+		}
+		. get(event.keycode, Vector3.ZERO)
+	)
 	if nudge != Vector3.ZERO:
 		immersive_offset += nudge * OFFSET_STEP
 		print("Offset: --offset=%.2f,%.2f,%.2f" % [immersive_offset.x, immersive_offset.y, immersive_offset.z])
@@ -151,6 +157,7 @@ func _accepts_input() -> bool:
 
 # --- Spatial container lifecycle -------------------------------------------------
 
+
 func _on_session_begun() -> void:
 	if not container_ext_active:
 		return
@@ -164,7 +171,9 @@ func _on_session_begun() -> void:
 	_apply_layout()
 
 
-func _on_bounds_changed(_rid: RID, infinite_bounds: bool, mode: OpenXRSpatialContainerState.BoundsMode, new_bounds: Vector3) -> void:
+func _on_bounds_changed(
+	_rid: RID, infinite_bounds: bool, mode: OpenXRSpatialContainerState.BoundsMode, new_bounds: Vector3
+) -> void:
 	print("Bounds changed: mode=%d infinite=%s bounds=%s" % [mode, infinite_bounds, new_bounds])
 	bounds_mode = mode
 	bounds = Vector3.ZERO if infinite_bounds else new_bounds
@@ -197,7 +206,11 @@ func _on_closed(_rid: RID) -> void:
 
 
 func _toggle_bounds_mode() -> void:
-	var next := OpenXRSpatialContainerState.BOUNDS_MODE_IMMERSIVE if _is_bounded() else OpenXRSpatialContainerState.BOUNDS_MODE_BOUNDED
+	var next := (
+		OpenXRSpatialContainerState.BOUNDS_MODE_IMMERSIVE
+		if _is_bounded()
+		else OpenXRSpatialContainerState.BOUNDS_MODE_BOUNDED
+	)
 	if not container_ext_active:
 		# Emulation: switch locally.
 		bounds_mode = next
@@ -215,6 +228,7 @@ func _is_bounded() -> bool:
 
 
 # --- Layout ----------------------------------------------------------------------
+
 
 func _apply_layout() -> void:
 	if not model:
@@ -275,6 +289,7 @@ func _update_status() -> void:
 
 
 # --- Model loading ---------------------------------------------------------------
+
 
 ## Parses "--name=x,y,z" from the user command line arguments. Returns null if absent or invalid.
 func _vector3_from_cmdline(prefix: String) -> Variant:

@@ -19,12 +19,12 @@ namespace {
 
 int g_failures = 0;
 
-#define CHECK(cond)                                                          \
-    do {                                                                     \
-        if (!(cond)) {                                                       \
+#define CHECK(cond)                                                                \
+    do {                                                                           \
+        if (!(cond)) {                                                             \
             std::fprintf(stderr, "FAILED %s:%d: %s\n", __FILE__, __LINE__, #cond); \
-            ++g_failures;                                                    \
-        }                                                                    \
+            ++g_failures;                                                          \
+        }                                                                          \
     } while (0)
 
 #define CHECK_XR(expr, expected) CHECK((expr) == (expected))
@@ -86,14 +86,22 @@ std::vector<XrEventDataBuffer> Poll(XrInstance instance) {
 
 const char* TypeName(XrStructureType type) {
     switch (type) {
-        case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: return "SessionStateChanged";
-        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_VISIBLE_CHANGED_EXT: return "VisibleChanged";
-        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_INTERACTABLE_CHANGED_EXT: return "InteractableChanged";
-        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_BOUNDS_CHANGED_EXT: return "BoundsChanged";
-        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_CLOSED_EXT: return "Closed";
-        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_VISIBLE_REQUEST_DENIED_EXT: return "VisibleRequestDenied";
-        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_BOUNDS_MODE_REQUEST_DENIED_EXT: return "BoundsModeRequestDenied";
-        default: return "other";
+        case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED:
+            return "SessionStateChanged";
+        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_VISIBLE_CHANGED_EXT:
+            return "VisibleChanged";
+        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_INTERACTABLE_CHANGED_EXT:
+            return "InteractableChanged";
+        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_BOUNDS_CHANGED_EXT:
+            return "BoundsChanged";
+        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_CLOSED_EXT:
+            return "Closed";
+        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_VISIBLE_REQUEST_DENIED_EXT:
+            return "VisibleRequestDenied";
+        case XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_BOUNDS_MODE_REQUEST_DENIED_EXT:
+            return "BoundsModeRequestDenied";
+        default:
+            return "other";
     }
 }
 
@@ -106,26 +114,29 @@ std::string Describe(const std::vector<XrEventDataBuffer>& events) {
         if (e.type == XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED) {
             out += "(" + std::to_string(reinterpret_cast<const XrEventDataSessionStateChanged&>(e).state) + ")";
         } else if (e.type == XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_VISIBLE_CHANGED_EXT) {
-            out += "(" + std::to_string(reinterpret_cast<const XrEventDataSpatialContainerVisibleChangedEXT&>(e).visible) + ")";
+            out +=
+                "(" + std::to_string(reinterpret_cast<const XrEventDataSpatialContainerVisibleChangedEXT&>(e).visible) + ")";
         } else if (e.type == XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_INTERACTABLE_CHANGED_EXT) {
-            out += "(" +
-                   std::to_string(reinterpret_cast<const XrEventDataSpatialContainerInteractableChangedEXT&>(e).interactable) +
-                   ")";
+            out +=
+                "(" +
+                std::to_string(reinterpret_cast<const XrEventDataSpatialContainerInteractableChangedEXT&>(e).interactable) +
+                ")";
         } else if (e.type == XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_BOUNDS_CHANGED_EXT) {
-            out += "(" + std::to_string(reinterpret_cast<const XrEventDataSpatialContainerBoundsChangedEXT&>(e).boundsMode) + ")";
+            out += "(" + std::to_string(reinterpret_cast<const XrEventDataSpatialContainerBoundsChangedEXT&>(e).boundsMode) +
+                   ")";
         }
     }
     return out;
 }
 
-#define CHECK_EVENTS(events, expected)                                                          \
-    do {                                                                                        \
-        const std::string actual = Describe(events);                                            \
-        if (actual != (expected)) {                                                             \
-            std::fprintf(stderr, "FAILED %s:%d: events [%s], expected [%s]\n", __FILE__, __LINE__, \
-                         actual.c_str(), (expected));                                           \
-            ++g_failures;                                                                       \
-        }                                                                                       \
+#define CHECK_EVENTS(events, expected)                                                                             \
+    do {                                                                                                           \
+        const std::string actual = Describe(events);                                                               \
+        if (actual != (expected)) {                                                                                \
+            std::fprintf(stderr, "FAILED %s:%d: events [%s], expected [%s]\n", __FILE__, __LINE__, actual.c_str(), \
+                         (expected));                                                                              \
+            ++g_failures;                                                                                          \
+        }                                                                                                          \
     } while (0)
 
 struct Frame {
@@ -181,7 +192,8 @@ int Run(const Mock& mock, const std::string& mode) {
     }
     CHECK(found == 2);
 
-    const char* extensions[] = {XR_EXT_SPATIAL_CONTAINER_EXTENSION_NAME, XR_EXT_SPATIAL_CONTAINER_SELF_RENDERING_EXTENSION_NAME};
+    const char* extensions[] = {XR_EXT_SPATIAL_CONTAINER_EXTENSION_NAME,
+                                XR_EXT_SPATIAL_CONTAINER_SELF_RENDERING_EXTENSION_NAME};
     XrInstanceCreateInfo instanceInfo{XR_TYPE_INSTANCE_CREATE_INFO};
     std::strcpy(instanceInfo.applicationInfo.applicationName, "layer_test");
     instanceInfo.applicationInfo.apiVersion = XR_API_VERSION_1_0;
@@ -384,7 +396,9 @@ int Run(const Mock& mock, const std::string& mode) {
 
     // Bounds mode changes.
     XrSpatialContainerBoundsModeRequestInfoEXT modeRequest{XR_TYPE_SPATIAL_CONTAINER_BOUNDS_MODE_REQUEST_INFO_EXT};
-    modeRequest.boundsMode = static_cast<XrSpatialContainerBoundsModeEXT>(7);
+    // An invalid value on purpose.
+    modeRequest.boundsMode =
+        static_cast<XrSpatialContainerBoundsModeEXT>(7);  // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
     CHECK_XR(api.RequestBoundsMode(container, &modeRequest), XR_ERROR_VALIDATION_FAILURE);
     modeRequest.boundsMode = XR_SPATIAL_CONTAINER_BOUNDS_MODE_IMMERSIVE_EXT;
     CHECK_XR(api.RequestBoundsMode(container, &modeRequest), XR_SUCCESS);

@@ -19,4 +19,6 @@ public:
 
 }  // namespace
 
-std::unique_ptr<Graphics> CreateHeadlessGraphics() { return std::make_unique<HeadlessGraphics>(); }
+std::unique_ptr<Graphics> CreateHeadlessGraphics() {
+    return std::make_unique<HeadlessGraphics>();
+}

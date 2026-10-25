@@ -18,7 +18,7 @@ The key points of the spec are:
 
 From this, a first step could be the following configuration:
 
-```
+```text
 supportsImmersive = true
 supportsBounded   = false
 maxSpatialContainerCount = 1
