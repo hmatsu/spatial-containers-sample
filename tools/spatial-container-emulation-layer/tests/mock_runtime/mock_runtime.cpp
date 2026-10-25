@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <cstring>
 #include <deque>
+#include <map>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -32,6 +33,11 @@ bool g_running = false;
 XrTime g_time = 1000000000;
 uint64_t g_nextHandle = 1;
 std::string g_lastError;
+// Reference spaces as offsets from LOCAL. Orientation is ignored: the tests only use
+// translated spaces.
+std::map<XrSpace, XrVector3f> g_spaces;
+// The eyes, in LOCAL.
+const XrVector3f kEyes[2] = {{-0.032f, 0.0f, 0.0f}, {0.032f, 0.0f, 0.0f}};
 
 // What the last xrEndFrame received.
 uint32_t g_frameLayerCount = 0;
@@ -238,8 +244,8 @@ XrResult XRAPI_CALL EndFrame(XrSession, const XrFrameEndInfo* info) {
     return XR_SUCCESS;
 }
 
-XrResult XRAPI_CALL LocateViews(XrSession, const XrViewLocateInfo*, XrViewState* state, uint32_t capacity, uint32_t* count,
-                                XrView* views) {
+XrResult XRAPI_CALL LocateViews(XrSession, const XrViewLocateInfo* info, XrViewState* state, uint32_t capacity,
+                                uint32_t* count, XrView* views) {
     std::lock_guard<std::mutex> lock(g_mutex);
     if (!g_running) return XR_ERROR_SESSION_NOT_RUNNING;
     *count = 2;
@@ -248,23 +254,27 @@ XrResult XRAPI_CALL LocateViews(XrSession, const XrViewLocateInfo*, XrViewState*
     state->viewStateFlags = XR_VIEW_STATE_ORIENTATION_VALID_BIT | XR_VIEW_STATE_POSITION_VALID_BIT |
                             XR_VIEW_STATE_ORIENTATION_TRACKED_BIT | XR_VIEW_STATE_POSITION_TRACKED_BIT;
     for (uint32_t i = 0; i < 2; ++i) {
-        views[i].pose = {{0, 0, 0, 1}, {i == 0 ? -0.032f : 0.032f, 0, 0}};
+        const XrVector3f base = g_spaces[info->space];
+        views[i].pose = {{0, 0, 0, 1}, {kEyes[i].x - base.x, kEyes[i].y - base.y, kEyes[i].z - base.z}};
         views[i].fov = {-0.8f, 0.8f, 0.7f, -0.7f};
     }
     return XR_SUCCESS;
 }
 
-XrResult XRAPI_CALL CreateReferenceSpace(XrSession, const XrReferenceSpaceCreateInfo*, XrSpace* space) {
+XrResult XRAPI_CALL CreateReferenceSpace(XrSession, const XrReferenceSpaceCreateInfo* info, XrSpace* space) {
     std::lock_guard<std::mutex> lock(g_mutex);
     *space = MakeHandle<XrSpace>();
+    g_spaces[*space] = info->poseInReferenceSpace.position;
     return XR_SUCCESS;
 }
 
 XrResult XRAPI_CALL DestroySpace(XrSpace) { return XR_SUCCESS; }
 
-XrResult XRAPI_CALL LocateSpace(XrSpace, XrSpace, XrTime, XrSpaceLocation* location) {
+XrResult XRAPI_CALL LocateSpace(XrSpace space, XrSpace baseSpace, XrTime, XrSpaceLocation* location) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    const XrVector3f a = g_spaces[space], b = g_spaces[baseSpace];
     location->locationFlags = XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_POSITION_VALID_BIT;
-    location->pose = {{0, 0, 0, 1}, {0, 0, 0}};
+    location->pose = {{0, 0, 0, 1}, {a.x - b.x, a.y - b.y, a.z - b.z}};
     return XR_SUCCESS;
 }
 

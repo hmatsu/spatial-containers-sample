@@ -18,7 +18,7 @@ Toward the app, the layer presents the spatial container session model. Toward t
 | Visible containers are interactable while the runtime session is FOCUSED | Session state FOCUSED |
 | `Closed` for every container | Session state EXITING or LOSS_PENDING |
 | `xrWaitFrame` keeps pacing frames and `shouldRender` is always false | Forwards `xrWaitFrame` while the runtime session runs. Otherwise it sleeps for one display period |
-| `xrLocateSpatialContainerViewsEXT` | `xrLocateViews` in the space the app passes |
+| `xrLocateSpatialContainerViewsEXT`, with the FOV fitted to a bounded container | `xrLocateViews` in the space the app passes, plus `xrLocateSpace` for the container |
 | Layers per container through `XrSpatialContainerLayerFrameEndInfoEXT` | One `xrEndFrame` with the layers of all visible containers, in render-set order |
 | Container space | A LOCAL reference space offset to the configured container position |
 
@@ -65,14 +65,25 @@ All settings are environment variables.
 | `XR_SCEMU_MAX_CONTAINERS` | `16` | `maxSpatialContainerCount` |
 | `XR_SCEMU_DENY_VISIBLE_REQUESTS` | off | Deny every show request, to test the app's handling of `VisibleRequestDenied`. |
 | `XR_SCEMU_DENY_BOUNDS_MODE_REQUESTS` | off | Deny bounds mode requests for visible containers, to test `BoundsModeRequestDenied`. Requests for hidden containers are still honored, as the spec requires. |
+| `XR_SCEMU_TIGHT_FOV` | on | Fit each view's FOV to bounded containers (see below). Set to `0` to return the runtime's full views. |
 | `XR_SCEMU_LOG` | off | Log state changes to stderr. |
 
 For a desktop display such as the SRD, set `XR_SCEMU_POSITION` to the center of the display volume and `XR_SCEMU_BOUNDS` to its size in the runtime's LOCAL space.
 
+## FOV fitting
+
+For bounded containers, `xrLocateSpatialContainerViewsEXT` narrows each view's FOV to the smallest frustum that contains the container's bounding box, as the spec recommends. `recommendedImageExtent` shrinks by the same ratio, so the angular resolution stays the same. Because the app then only renders that frustum, pixels outside the container's 2D pixel bounds are also left out (approximated by a rectangle).
+
+- **Container behind or around the eye**: When a corner of the box is at or behind the eye, no finite frustum contains it, and the runtime's full view is returned.
+- **Container outside every view**: `shouldSubmitLayers` is false.
+- **Immersive containers**: They always get the runtime's full views.
+
+The same computation is what a runtime has to do for this part of the spec. See `FitFov` and `FitContainerViews` in [src/layer.cpp](src/layer.cpp).
+
 ## Limitations
 
 - **Graphics binding required**: The spec lets spatial container sessions omit the graphics binding, but the layer passes `xrCreateSession` through, so the runtime needs one.
-- **No clipping and no tight FOV**: Views are the runtime's full views, and content outside a bounded container is not discarded. The spec requires runtimes to discard pixels outside the 2D pixel bounds.
+- **Rectangular clipping only**: Pixels outside the 2D pixel bounds are excluded only to the extent of the fitted frustum's rectangle, not the exact projected outline of the box. Layers that do not depend on the view (such as quads) are not clipped at all.
 - **Fixed placement**: The container is placed at `XR_SCEMU_POSITION` in both bounded and immersive modes, and never moves.
 - **One view configuration**: Only the runtime's first view configuration is supported, and it is never decayed.
 - **Retain is approximate**: Retained layers are resubmitted as structures, so later writes to their swapchains can show up. The spec says they must not. Next chains of retained layers are dropped.
@@ -89,7 +100,8 @@ For a desktop display such as the SRD, set `XR_SCEMU_POSITION` to the center of 
 - Extension listing, system properties, and presentation enumeration
 - Session translation, including stopping and restarting the runtime session and session loss
 - Visibility, interactable, and bounds events, including their order
-- View location, frame submission (normal, retain, and clear), and `xrEndFrame` validation
+- View location, including the fitted FOV and image extent for bounded containers and the full views for immersive ones
+- Frame submission (normal, retain, and clear) and `xrEndFrame` validation
 - Container space locatability
 - The deny switches
 

@@ -8,6 +8,7 @@
 
 #include <dlfcn.h>
 
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -27,6 +28,7 @@ int g_failures = 0;
     } while (0)
 
 #define CHECK_XR(expr, expected) CHECK((expr) == (expected))
+#define CHECK_NEAR(a, b) CHECK(std::fabs((a) - (b)) < 1e-4)
 
 struct Mock {
     void (*queueState)(XrSessionState);
@@ -309,9 +311,22 @@ int Run(const Mock& mock, const std::string& mode) {
     CHECK_XR(api.LocateViews(session, &viewsLocate, 1, &viewState, 1, views), XR_ERROR_VALIDATION_FAILURE);
     CHECK_XR(api.LocateViews(session, &viewsLocate, 1, &viewState, 2, views), XR_SUCCESS);
     CHECK(viewState.shouldSubmitLayers);
-    CHECK(viewState.recommendedImageExtent.width == 1280);
     CHECK((viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) != 0);
-    CHECK(views[1].pose.position.x > 0.0f);
+    // The mock's eyes are at (+-0.032, 0, 0) in LOCAL and the container is 1 m ahead, so
+    // in container space they are at (+-0.032, 0, 1).
+    CHECK_NEAR(views[0].pose.position.x, -0.032f);
+    CHECK_NEAR(views[0].pose.position.z, 1.0f);
+    // FOV fitted to the 0.3 x 0.2 x 0.25 box: its front face is 0.875 m from the eyes.
+    CHECK_NEAR(views[0].fov.angleLeft, std::atan(-0.118f / 0.875f));
+    CHECK_NEAR(views[0].fov.angleRight, std::atan(0.182f / 0.875f));
+    CHECK_NEAR(views[0].fov.angleUp, std::atan(0.1f / 0.875f));
+    CHECK_NEAR(views[0].fov.angleDown, std::atan(-0.1f / 0.875f));
+    CHECK_NEAR(views[1].fov.angleLeft, -views[0].fov.angleRight);
+    // The image shrinks with the FOV (mock FOV: +-0.8 horizontal, +-0.7 vertical).
+    CHECK(viewState.recommendedImageExtent.width ==
+          static_cast<int32_t>(std::ceil(1280 * (0.3f / 0.875f) / (2 * std::tan(0.8f)))));
+    CHECK(viewState.recommendedImageExtent.height ==
+          static_cast<int32_t>(std::ceil(720 * (0.2f / 0.875f) / (2 * std::tan(0.7f)))));
     CHECK_XR(xrLocateViews(session, nullptr, nullptr, 0, &count, nullptr), XR_ERROR_SPATIAL_CONTAINERS_ENABLED_EXT);
 
     // Validation of the submission, each of which must not end the frame.
@@ -377,6 +392,10 @@ int Run(const Mock& mock, const std::string& mode) {
     CHECK_EVENTS(Poll(instance), "BoundsChanged(2)");
     CHECK_XR(api.GetBounds(container, nullptr, &bounds), XR_SUCCESS);
     CHECK(bounds.infiniteBounds && bounds.bounds.width == 0.0f);
+    // Immersive containers get the runtime's full views.
+    CHECK_XR(api.LocateViews(session, &viewsLocate, 1, &viewState, 2, views), XR_SUCCESS);
+    CHECK_NEAR(views[0].fov.angleRight, 0.8f);
+    CHECK(viewState.recommendedImageExtent.width == 1280);
 
     // Runtime loses focus, then stops: interactable, then visible, are lost.
     mock.queueState(XR_SESSION_STATE_VISIBLE);
