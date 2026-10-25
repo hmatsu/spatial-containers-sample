@@ -20,7 +20,7 @@ window/vsync/vsync_mode=0
 [xr]
 
 openxr/enabled=true
-openxr/reference_space=1
+openxr/reference_space=0
 openxr/extensions/spatial_container/enabled=true
 openxr/extensions/spatial_container/bounds_mode=0
 openxr/extensions/spatial_container/bounds=Vector3(0.3, 0.2, 0.2)
