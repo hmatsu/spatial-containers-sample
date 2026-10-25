@@ -50,6 +50,10 @@ While the extension is active, input is accepted only when the runtime reports t
 - **Input routing**: With the extension, keyboard and controller input is ignored unless the container is interactable.
 - **Status display**: A `Label3D` shows the extension state (active or emulated), the mode, the bounds size, visible / interactable, and the content offset when it applies. This is useful for visually checking a runtime while debugging it.
 
+## Verifying on Windows
+
+See [docs/godot-viewer-verification.md](../../docs/godot-viewer-verification.md) for step-by-step checks: first with the viewer's own emulation, then through the emulation layer, then on a runtime with native support.
+
 ## Notes for the SRD runtime
 
 See [docs/srd-runtime-notes.md](../../docs/srd-runtime-notes.md).

@@ -10,6 +10,7 @@ Samples and research notes for experimenting with OpenXR Spatial Containers (`XR
 | [samples/cpp-minimal](samples/cpp-minimal) | Minimal C++ app using only the OpenXR SDK, with a Direct3D 11 backend and a headless mode for tests |
 | [tools/spatial-container-emulation-layer](tools/spatial-container-emulation-layer) | OpenXR API layer that emulates both extensions on runtimes without them, with a mock runtime and end-to-end tests |
 | [docs/srd-runtime-notes.md](docs/srd-runtime-notes.md) | Notes on adding Spatial Containers support to a Spatial Reality Display runtime |
+| [docs/godot-viewer-verification.md](docs/godot-viewer-verification.md) | Step-by-step checks for the Godot viewer on Windows, from emulation to native runtime support |
 | [docs/runtime-checklist.md](docs/runtime-checklist.md) | Runtime requirements of both extensions as a checklist |
 
 ## References
