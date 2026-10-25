@@ -7,6 +7,8 @@ A 3D model viewer sample for `XR_EXT_spatial_container`, built with Godot.
 | bounded | Scales the model to fit the container bounds reported by the runtime and spins it slowly. The container bounds are drawn as a wireframe box. |
 | immersive | Shows the model at real scale (1 unit = 1 m), 1 m in front of the user. |
 
+To exercise the real extension code path on such runtimes, run the viewer with the [emulation layer](../../tools/spatial-container-emulation-layer) enabled.
+
 On runtimes without the extension (such as existing OpenXR 1.0 runtimes), the viewer runs in **emulation mode**, using the bounds from the project setting `xr/openxr/extensions/spatial_container/bounds` as a virtual container.
 
 ## Requirements

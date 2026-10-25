@@ -1,0 +1,20 @@
+{
+    "file_format_version": "1.0.0",
+    "api_layer": {
+        "name": "@LAYER_NAME@",
+        "library_path": "@LAYER_LIBRARY_PATH@",
+        "api_version": "1.1",
+        "implementation_version": "1",
+        "description": "Emulates XR_EXT_spatial_container and XR_EXT_spatial_container_self_rendering on runtimes without them",
+        "instance_extensions": [
+            {
+                "name": "XR_EXT_spatial_container",
+                "extension_version": 1
+            },
+            {
+                "name": "XR_EXT_spatial_container_self_rendering",
+                "extension_version": 1
+            }
+        ]
+    }
+}
