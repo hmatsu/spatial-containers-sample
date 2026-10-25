@@ -14,6 +14,10 @@ if(OPENXR_SDK_SOURCE_DIR)
     set(openxr_sdk_SOURCE_DIR "${OPENXR_SDK_SOURCE_DIR}")
 else()
     include(FetchContent)
+    # Populate only: the SDK is added below with our own options.
+    if(POLICY CMP0169)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
     FetchContent_Declare(openxr_sdk
         GIT_REPOSITORY https://github.com/KhronosGroup/OpenXR-SDK.git
         GIT_TAG release-1.1.65
