@@ -1,0 +1,45 @@
+# Linters and static analysis. Covers every file type, including documentation, so
+# it runs on every pull request and push to main (about 2 minutes).
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint and static analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang-format-18 clang-tidy-18 shellcheck libx11-dev ninja-build
+          pipx install "gdtoolkit==4.5.0"
+          pipx install "editorconfig-checker==3.11.1"
+          npm install --global "markdownlint-cli2@0.18.1"
+          curl -fsSL -o actionlint.tgz "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz"
+          tar xzf actionlint.tgz actionlint && sudo mv actionlint /usr/local/bin/
+      - name: Lint
+        env:
+          CLANG_FORMAT: clang-format-18
+          CLANG_TIDY: clang-tidy-18
+        run: set -o pipefail; scripts/lint.sh 2>&1 | tee ci.log
+      - name: Report failure
+        if: failure()
+        run: |
+          {
+            echo -n "::error title=Last output::"
+            grep -vE "warnings generated|^\[[0-9]+/[0-9]+\] Processing" ci.log | tail -n 60 \
+              | sed -e 's/%/%25/g' -e 's/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g'
+          } || true
