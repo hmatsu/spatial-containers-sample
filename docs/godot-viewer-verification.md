@@ -30,7 +30,7 @@ Stage C is the goal. A and B separate app problems from runtime problems before 
 
 A1. Open a terminal in `samples/container-viewer` and start the viewer:
 
-```
+```bat
 Godot_v4.8-dev7_win64_console.exe --path .
 ```
 
@@ -55,7 +55,7 @@ A4. Interaction:
 
 A5. Restart with the offset you found, to confirm it is applied:
 
-```
+```bat
 Godot_v4.8-dev7_win64_console.exe --path . -- --offset=0,-0.1,-0.5
 ```
 
@@ -65,7 +65,7 @@ Pass criteria: the model is visible and stays inside the box at any rotation, bo
 
 B1. Build the layer (once):
 
-```
+```bat
 cd tools\spatial-container-emulation-layer
 cmake -S . -B build -DSCEMU_BUILD_TESTS=OFF
 cmake --build build --config Release
@@ -73,7 +73,7 @@ cmake --build build --config Release
 
 B2. In the terminal that will start Godot, enable the layer. Configure the container from the offset found in stage A3, and size the bounds to your display volume:
 
-```
+```bat
 set XR_API_LAYER_PATH=%CD%\build\Release
 set XR_ENABLE_API_LAYERS=XR_APILAYER_spatial_container_emulation
 set XR_SCEMU_POSITION=0,-0.1,-0.5
@@ -111,7 +111,7 @@ B6. Focus and input:
 
 B7. Denial handling. Restart with one of these set, then press Space:
 
-```
+```bat
 set XR_SCEMU_DENY_BOUNDS_MODE_REQUESTS=1
 ```
 

@@ -95,7 +95,9 @@ The same computation is what a runtime has to do for this part of the spec. See 
 
 ## Tests
 
-`tests/` contains a minimal headless mock runtime and an end-to-end test that goes through the real OpenXR loader: app → loader → layer → mock runtime. The mock runtime rejects any spatial container structure that reaches it, and records what `xrEndFrame` received. The tests cover:
+`tests/unit_tests.cpp` unit-tests the stateless parts in [src/layer_internal.h](src/layer_internal.h) with doctest: configuration parsing, next-chain unlinking, layer copies, pose math, and FOV fitting. These run on every platform.
+
+`tests/` also contains a minimal headless mock runtime and an end-to-end test that goes through the real OpenXR loader: app → loader → layer → mock runtime. The mock runtime rejects any spatial container structure that reaches it, and records what `xrEndFrame` received. The tests cover:
 
 - Extension listing, system properties, and presentation enumeration
 - Session translation, including stopping and restarting the runtime session and session loss
@@ -111,4 +113,4 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-The tests are set up for Linux only.
+The end-to-end tests are set up for Linux only.

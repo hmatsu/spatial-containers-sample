@@ -62,11 +62,11 @@ func _ready() -> void:
 	else:
 		print("Spatial container extension not available, emulating a bounded container.")
 		bounds = ProjectSettings.get_setting("xr/openxr/extensions/spatial_container/bounds")
-		var bounds_arg = _vector3_from_cmdline("--bounds=")
+		var bounds_arg = _parse_vector3_arg(OS.get_cmdline_user_args(), "--bounds=")
 		if bounds_arg != null:
 			bounds = bounds_arg
 
-	var offset_arg = _vector3_from_cmdline("--offset=")
+	var offset_arg = _parse_vector3_arg(OS.get_cmdline_user_args(), "--offset=")
 	if offset_arg != null:
 		immersive_offset = offset_arg
 
@@ -75,7 +75,7 @@ func _ready() -> void:
 
 	get_window().files_dropped.connect(_on_files_dropped)
 
-	var path := _model_path_from_cmdline()
+	var path := _parse_string_arg(OS.get_cmdline_user_args(), "--model=")
 	if path.is_empty() or not _load_model(path):
 		_set_model(_build_default_model())
 	_apply_layout()
@@ -291,9 +291,9 @@ func _update_status() -> void:
 # --- Model loading ---------------------------------------------------------------
 
 
-## Parses "--name=x,y,z" from the user command line arguments. Returns null if absent or invalid.
-func _vector3_from_cmdline(prefix: String) -> Variant:
-	for arg in OS.get_cmdline_user_args():
+## Parses "<prefix>x,y,z" from command line arguments. Returns null if absent or invalid.
+func _parse_vector3_arg(args: PackedStringArray, prefix: String) -> Variant:
+	for arg in args:
 		if not arg.begins_with(prefix):
 			continue
 		var parts := arg.trim_prefix(prefix).split(",")
@@ -303,10 +303,11 @@ func _vector3_from_cmdline(prefix: String) -> Variant:
 	return null
 
 
-func _model_path_from_cmdline() -> String:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("--model="):
-			return arg.trim_prefix("--model=")
+## Returns the value of "<prefix>value" from command line arguments, or "" if absent.
+func _parse_string_arg(args: PackedStringArray, prefix: String) -> String:
+	for arg in args:
+		if arg.begins_with(prefix):
+			return arg.trim_prefix(prefix)
 	return ""
 
 

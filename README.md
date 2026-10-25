@@ -26,7 +26,15 @@ Samples and research notes for experimenting with OpenXR Spatial Containers (`XR
 
 ## Checks
 
-CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) builds and tests the C++ code on Linux (also with ASan and UBSan) and with MSVC on Windows, checks the Godot viewer's scripts, and runs the linters.
+CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) builds and tests the C++ code on Linux (also with ASan and UBSan) and with MSVC on Windows, checks and unit-tests the Godot viewer's scripts, and runs the linters.
+
+| Tests | Where | Runs in CI on |
+|---|---|---|
+| Emulation layer unit tests (doctest) | [tools/spatial-container-emulation-layer/tests/unit_tests.cpp](tools/spatial-container-emulation-layer/tests/unit_tests.cpp) | Linux, Windows |
+| C++ sample math unit tests (doctest) | [samples/cpp-minimal/tests/math_tests.cpp](samples/cpp-minimal/tests/math_tests.cpp) | Linux, Windows |
+| Godot viewer unit tests | [samples/container-viewer/tests/run_tests.gd](samples/container-viewer/tests/run_tests.gd) | Linux (Godot headless) |
+| Emulation layer end-to-end tests (loader + mock runtime) | [tools/spatial-container-emulation-layer/tests/layer_test.cpp](tools/spatial-container-emulation-layer/tests/layer_test.cpp) | Linux |
+| C++ sample lifecycle test (headless, through the layer) | [samples/cpp-minimal/CMakeLists.txt](samples/cpp-minimal/CMakeLists.txt) | Linux |
 
 To run the linters locally:
 
