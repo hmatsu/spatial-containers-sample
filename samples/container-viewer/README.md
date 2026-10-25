@@ -61,6 +61,10 @@ godot --headless --path . -s res://tests/run_tests.gd
 
 The exit code is the number of failed tests.
 
+## Verifying on Windows
+
+See [docs/godot-viewer-verification.md](../../docs/godot-viewer-verification.md) for step-by-step checks: first with the viewer's own emulation, then through the emulation layer, then on a runtime with native support.
+
 ## Notes for the SRD runtime
 
 See [docs/srd-runtime-notes.md](../../docs/srd-runtime-notes.md).
