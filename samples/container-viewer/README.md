@@ -25,6 +25,7 @@ godot --path . -- --model=C:/path/to/model.glb
 - Without `--model=`, a simple built-in model is shown.
 - `--offset=x,y,z` sets where the content is placed (meters, in the play space) in immersive mode and in emulation mode. The default is `0,0,-1`. On a desktop display such as the SRD, the default is likely outside the display volume, so adjust it with the keys below and pass the printed value next time.
 - `--bounds=x,y,z` sets the size of the virtual container in emulation mode (meters). It has no effect when the runtime supports the extension.
+- `--toggle-every=SECONDS` switches between bounded and immersive every SECONDS, for unattended runs such as soak tests on a display or automated tests.
 - Drag and drop a `.glb` / `.gltf` file onto the Godot window while running to replace the model.
 
 ## Controls

@@ -3,6 +3,7 @@ extends SceneTree
 ## stays in emulation mode unless a test sets the extension state itself.
 ##
 ## Usage: godot --headless --path samples/container-viewer -s res://tests/run_tests.gd
+## If an OpenXR runtime is installed, disable it, e.g. XR_RUNTIME_JSON=/nonexistent.json.
 ## The exit code is the number of failed tests.
 
 const MainScene := preload("res://main.tscn")
@@ -214,6 +215,16 @@ func test_hidden_container_stops_processing(viewer: Node3D) -> void:
 	_check(not viewer.is_processing(), "processing stops while hidden")
 	viewer._on_visible_changed(RID(), true)
 	_check(viewer.is_processing(), "processing resumes")
+
+
+func test_auto_toggle(viewer: Node3D) -> void:
+	_check(viewer._start_auto_toggle(0.0) == null, "disabled for 0")
+	var timer: Timer = viewer._start_auto_toggle(2.5)
+	_check(timer != null and timer.wait_time == 2.5, "timer created")
+	timer.timeout.emit()
+	_check(not viewer._is_bounded(), "first timeout switches to immersive")
+	timer.timeout.emit()
+	_check(viewer._is_bounded(), "second timeout switches back")
 
 
 func test_status_label(viewer: Node3D) -> void:

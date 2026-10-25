@@ -35,6 +35,7 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) builds and tests the C
 | Godot viewer unit tests | [samples/container-viewer/tests/run_tests.gd](samples/container-viewer/tests/run_tests.gd) | Linux (Godot headless) |
 | Emulation layer end-to-end tests (loader + mock runtime) | [tools/spatial-container-emulation-layer/tests/layer_test.cpp](tools/spatial-container-emulation-layer/tests/layer_test.cpp) | Linux |
 | C++ sample lifecycle test (headless, through the layer) | [samples/cpp-minimal/CMakeLists.txt](samples/cpp-minimal/CMakeLists.txt) | Linux |
+| Godot viewer end-to-end tests (Monado, software Vulkan, Xvfb) | [tests/e2e](tests/e2e) | Linux |
 
 To run the linters locally:
 
