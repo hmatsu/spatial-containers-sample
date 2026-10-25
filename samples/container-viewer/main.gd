@@ -75,6 +75,10 @@ func _ready() -> void:
 
 	get_window().files_dropped.connect(_on_files_dropped)
 
+	var toggle_every := _parse_string_arg(OS.get_cmdline_user_args(), "--toggle-every=")
+	if toggle_every.is_valid_float():
+		_start_auto_toggle(toggle_every.to_float())
+
 	var path := _parse_string_arg(OS.get_cmdline_user_args(), "--model=")
 	if path.is_empty() or not _load_model(path):
 		_set_model(_build_default_model())
@@ -221,6 +225,21 @@ func _toggle_bounds_mode() -> void:
 		return
 	# Asynchronous: the result arrives as bounds_changed or bounds_mode_request_denied.
 	OpenXRSpatialContainerExtension.request_spatial_container_bounds_mode(next)
+
+
+## Switches the bounds mode every `seconds`, for unattended runs (soak tests on a
+## display, automated end-to-end tests). Returns the timer, or null if disabled.
+func _start_auto_toggle(seconds: float) -> Timer:
+	if seconds <= 0.0:
+		return null
+	var timer := Timer.new()
+	timer.name = "AutoToggle"
+	timer.wait_time = seconds
+	timer.autostart = true
+	timer.timeout.connect(_toggle_bounds_mode)
+	add_child(timer)
+	print("Switching bounds mode every %.1f s" % seconds)
+	return timer
 
 
 func _is_bounded() -> bool:

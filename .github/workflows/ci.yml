@@ -15,6 +15,10 @@ permissions:
 
 env:
   GODOT_VERSION: 4.8-dev7
+  # Godot master with the fix for frames skipped while a spatial container is active
+  # (4.8-dev7 omits XrSpatialContainerLayerFrameEndInfoEXT on those frames). Used by
+  # the end-to-end job until a Godot build with the fix is released.
+  GODOT_E2E_COMMIT: c8256a8ecec068340753869e423dd478c84ef167
 
 jobs:
   linux:
@@ -104,6 +108,9 @@ jobs:
           done
       - name: Unit tests
         working-directory: samples/container-viewer
+        env:
+          # The unit tests expect no OpenXR runtime.
+          XR_RUNTIME_JSON: /nonexistent.json
         run: '"$GODOT" --headless --path . -s res://tests/run_tests.gd'
 
   lint:
@@ -125,3 +132,52 @@ jobs:
           CLANG_FORMAT: clang-format-18
           CLANG_TIDY: clang-tidy-18
         run: scripts/lint.sh
+
+  e2e:
+    name: End-to-end (Godot viewer on Monado)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install runtime and tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends monado-service libopenxr1-monado \
+            mesa-vulkan-drivers xvfb xauth libx11-dev ninja-build
+      - name: Build emulation layer
+        run: |
+          cmake -S tools/spatial-container-emulation-layer -B build-layer -G Ninja -DSCEMU_BUILD_TESTS=OFF
+          cmake --build build-layer
+      - name: Restore Godot build
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: godot-bin
+          key: godot-editor-linux-${{ env.GODOT_E2E_COMMIT }}
+      - name: Check out Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v5
+        with:
+          repository: godotengine/godot
+          ref: ${{ env.GODOT_E2E_COMMIT }}
+          path: godot-src
+      - name: Build Godot
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        working-directory: godot-src
+        run: |
+          pipx install "scons==4.9.1"
+          pipx inject scons zstandard
+          scons platform=linuxbsd target=editor -j"$(nproc)" wayland=no accesskit=no module_mono_enabled=no tests=no
+          mkdir -p ../godot-bin
+          cp bin/godot.linuxbsd.editor.x86_64 ../godot-bin/godot
+      - name: Run end-to-end tests
+        env:
+          E2E_LOG_DIR: ${{ github.workspace }}/e2e-logs
+        run: tests/e2e/run_viewer_e2e.sh godot-bin/godot build-layer
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: e2e-logs
+          path: e2e-logs
+          if-no-files-found: ignore

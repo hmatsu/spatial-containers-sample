@@ -138,6 +138,8 @@ struct Session {
     XrDuration displayPeriod = 11111111;  // 90 Hz until the runtime reports otherwise.
     std::chrono::steady_clock::time_point lastEmulatedWait{};
     std::vector<XrSpatialContainerEXT> renderOrder;  // Active render set, in begin order.
+    uint32_t framesToRuntime = 0;          // Frames ended on the runtime.
+    uint32_t framesWithLayers = 0;         // ...of which carried container layers.
 };
 
 struct Instance {
@@ -479,6 +481,10 @@ XrResult XRAPI_CALL Layer_xrDestroySession(XrSession session) {
         Instance* inst = GetInstanceForSession(s);
         if (inst == nullptr) return XR_ERROR_HANDLE_INVALID;
         next = inst->next.DestroySession;
+        if (s->emulated) {
+            Log("session summary: %u frames to the runtime, %u with container layers", s->framesToRuntime,
+                s->framesWithLayers);
+        }
         for (auto it = g_containers.begin(); it != g_containers.end();) {
             it = it->second->session == session ? g_containers.erase(it) : std::next(it);
         }
@@ -707,7 +713,12 @@ XrResult XRAPI_CALL Layer_xrEndFrame(XrSession session, const XrFrameEndInfo* in
     XrFrameEndInfo down = *info;
     down.layerCount = static_cast<uint32_t>(layers.size());
     down.layers = layers.empty() ? nullptr : layers.data();
-    return inst->next.EndFrame(session, &down);
+    const XrResult result = inst->next.EndFrame(session, &down);
+    if (XR_SUCCEEDED(result)) {
+        ++s->framesToRuntime;
+        if (!layers.empty()) ++s->framesWithLayers;
+    }
+    return result;
 }
 
 bool IsUnlocatableContainerSpace(XrSpace space) {
