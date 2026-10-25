@@ -141,8 +141,8 @@ public:
         xrEnumerateSwapchainFormats(session, 0, &count, nullptr);
         std::vector<int64_t> formats(count);
         xrEnumerateSwapchainFormats(session, count, &count, formats.data());
-        const int64_t preferred[] = {DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, DXGI_FORMAT_R8G8B8A8_UNORM,
-                                     DXGI_FORMAT_B8G8R8A8_UNORM};
+        const int64_t preferred[] = {DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
+                                     DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM};
         format_ = DXGI_FORMAT_UNKNOWN;
         for (int64_t candidate : preferred) {
             if (std::find(formats.begin(), formats.end(), candidate) != formats.end()) {
@@ -268,8 +268,8 @@ private:
         device_->CreateInputLayout(layout, 2, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout_);
 
         const std::vector<Vertex> vertices = BuildVertices();
-        D3D11_BUFFER_DESC vbDesc{static_cast<UINT>(vertices.size() * sizeof(Vertex)), D3D11_USAGE_IMMUTABLE,
-                                 D3D11_BIND_VERTEX_BUFFER, 0, 0, 0};
+        D3D11_BUFFER_DESC vbDesc{
+            static_cast<UINT>(vertices.size() * sizeof(Vertex)), D3D11_USAGE_IMMUTABLE, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0};
         D3D11_SUBRESOURCE_DATA vbData{vertices.data(), 0, 0};
         device_->CreateBuffer(&vbDesc, &vbData, &vertexBuffer_);
         D3D11_BUFFER_DESC cbDesc{sizeof(Mat4), D3D11_USAGE_DEFAULT, D3D11_BIND_CONSTANT_BUFFER, 0, 0, 0};
@@ -325,6 +325,8 @@ private:
 
 }  // namespace
 
-std::unique_ptr<Graphics> CreateD3D11Graphics() { return std::make_unique<D3D11Graphics>(); }
+std::unique_ptr<Graphics> CreateD3D11Graphics() {
+    return std::make_unique<D3D11Graphics>();
+}
 
 #endif  // _WIN32

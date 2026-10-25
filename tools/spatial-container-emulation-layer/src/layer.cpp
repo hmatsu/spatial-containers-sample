@@ -116,10 +116,11 @@ const Config& GetConfig() {
 
 void Log(const char* format, ...) {
     if (!GetConfig().log) return;
-    std::va_list args;
+    va_list args;
     va_start(args, format);
     std::fprintf(stderr, "[%s] ", kLayerName);
-    std::vfprintf(stderr, format, args);
+    // The analyzer does not see va_start above as initializing args.
+    std::vfprintf(stderr, format, args);  // NOLINT(clang-analyzer-valist.Uninitialized)
     std::fprintf(stderr, "\n");
     va_end(args);
 }
@@ -144,7 +145,7 @@ public:
         while (prev != nullptr && prev->next != nullptr) {
             auto* current = const_cast<XrBaseInStructure*>(prev->next);
             if (std::find(types.begin(), types.end(), current->type) != types.end()) {
-                removed_.push_back({prev, current});
+                removed_.emplace_back(prev, current);
                 prev->next = current->next;
             } else {
                 prev = current;
@@ -234,9 +235,9 @@ struct Session {
     bool runtimeRunning = false;
     bool runtimeVisible = false;
     bool runtimeFocused = false;
-    bool waitedDown = false;     // The last xrWaitFrame was forwarded to the runtime.
-    bool frameDown = false;      // The current frame was begun on the runtime.
-    bool inFrame = false;        // Between the app's xrBeginFrame and xrEndFrame.
+    bool waitedDown = false;  // The last xrWaitFrame was forwarded to the runtime.
+    bool frameDown = false;   // The current frame was begun on the runtime.
+    bool inFrame = false;     // Between the app's xrBeginFrame and xrEndFrame.
     bool runtimeShouldRender = false;
     XrViewConfigurationType primaryViewConfig = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
     std::vector<XrViewConfigurationView> viewConfigViews;
@@ -384,7 +385,7 @@ void CloseContainers(Instance* instance, Session* session) {
         }
         c->closed = true;
         QueueContainerEvent<XrEventDataSpatialContainerClosedEXT>(instance, XR_TYPE_EVENT_DATA_SPATIAL_CONTAINER_CLOSED_EXT,
-                                                                   c->handle);
+                                                                  c->handle);
         Log("container %p closed", (void*)c->handle);
     }
 }
@@ -515,7 +516,7 @@ XrPosef Multiply(const XrPosef& a, const XrPosef& b) {
     return {r, {a.position.x + t.x, a.position.y + t.y, a.position.z + t.z}};
 }
 
-enum class FitResult { Fitted, Unchanged, Outside };
+enum class FitResult : uint8_t { Fitted, Unchanged, Outside };
 
 // Narrows a view's FOV to the smallest frustum that contains the container's bounding
 // box, as the spec recommends. This also limits the app's rendering to the box's 2D
@@ -528,7 +529,8 @@ FitResult FitFov(const XrPosef& containerInView, const XrExtent3Df& bounds, XrFo
         const XrVector3f corner{(i & 1 ? 0.5f : -0.5f) * bounds.width, (i & 2 ? 0.5f : -0.5f) * bounds.height,
                                 (i & 4 ? 0.5f : -0.5f) * bounds.depth};
         const XrVector3f r = Rotate(containerInView.orientation, corner);
-        const XrVector3f c{r.x + containerInView.position.x, r.y + containerInView.position.y, r.z + containerInView.position.z};
+        const XrVector3f c{r.x + containerInView.position.x, r.y + containerInView.position.y,
+                           r.z + containerInView.position.z};
         // A corner at or behind the eye: no finite frustum contains the box.
         if (c.z > -kNear) return FitResult::Unchanged;
         minX = std::min(minX, c.x / -c.z);
@@ -604,8 +606,9 @@ XrResult XRAPI_CALL Layer_xrGetSystemProperties(XrInstance instance, XrSystemId 
         inst = GetInstance(instance);
     }
     if (inst == nullptr) return XR_ERROR_HANDLE_INVALID;
-    auto* containerProps = const_cast<XrSystemSpatialContainerPropertiesEXT*>(
-        FindInChain<XrSystemSpatialContainerPropertiesEXT>(properties->next, XR_TYPE_SYSTEM_SPATIAL_CONTAINER_PROPERTIES_EXT));
+    auto* containerProps =
+        const_cast<XrSystemSpatialContainerPropertiesEXT*>(FindInChain<XrSystemSpatialContainerPropertiesEXT>(
+            properties->next, XR_TYPE_SYSTEM_SPATIAL_CONTAINER_PROPERTIES_EXT));
     XrResult result;
     {
         ScopedChainUnlink unlink(properties, {XR_TYPE_SYSTEM_SPATIAL_CONTAINER_PROPERTIES_EXT});
@@ -627,8 +630,9 @@ XrResult XRAPI_CALL Layer_xrCreateSession(XrInstance instance, const XrSessionCr
         inst = GetInstance(instance);
     }
     if (inst == nullptr) return XR_ERROR_HANDLE_INVALID;
-    const bool emulated = inst->containersEnabled &&
-                          FindInChain<XrBaseInStructure>(createInfo->next, XR_TYPE_SESSION_CREATE_INFO_SPATIAL_CONTAINERS_EXT);
+    const bool emulated =
+        inst->containersEnabled &&
+        FindInChain<XrBaseInStructure>(createInfo->next, XR_TYPE_SESSION_CREATE_INFO_SPATIAL_CONTAINERS_EXT);
     XrResult result;
     {
         ScopedChainUnlink unlink(createInfo, {XR_TYPE_SESSION_CREATE_INFO_SPATIAL_CONTAINERS_EXT});
@@ -644,11 +648,12 @@ XrResult XRAPI_CALL Layer_xrCreateSession(XrInstance instance, const XrSessionCr
         uint32_t count = 0;
         inst->next.EnumerateViewConfigurations(instance, createInfo->systemId, 0, &count, nullptr);
         std::vector<XrViewConfigurationType> types(count);
-        if (count > 0 &&
-            XR_SUCCEEDED(inst->next.EnumerateViewConfigurations(instance, createInfo->systemId, count, &count, types.data()))) {
+        if (count > 0 && XR_SUCCEEDED(inst->next.EnumerateViewConfigurations(instance, createInfo->systemId, count, &count,
+                                                                             types.data()))) {
             state->primaryViewConfig = types[0];
         }
-        inst->next.EnumerateViewConfigurationViews(instance, createInfo->systemId, state->primaryViewConfig, 0, &count, nullptr);
+        inst->next.EnumerateViewConfigurationViews(instance, createInfo->systemId, state->primaryViewConfig, 0, &count,
+                                                   nullptr);
         state->viewConfigViews.resize(count, {XR_TYPE_VIEW_CONFIGURATION_VIEW});
         inst->next.EnumerateViewConfigurationViews(instance, createInfo->systemId, state->primaryViewConfig, count, &count,
                                                    state->viewConfigViews.data());
@@ -812,8 +817,8 @@ XrResult XRAPI_CALL Layer_xrEndFrame(XrSession session, const XrFrameEndInfo* in
     if (!s->inFrame) return XR_ERROR_CALL_ORDER_INVALID;
     if (info->layerCount != 0) return XR_ERROR_VALIDATION_FAILURE;
 
-    const auto* containerInfo = FindInChain<XrSpatialContainerLayerFrameEndInfoEXT>(
-        info->next, XR_TYPE_SPATIAL_CONTAINER_LAYER_FRAME_END_INFO_EXT);
+    const auto* containerInfo =
+        FindInChain<XrSpatialContainerLayerFrameEndInfoEXT>(info->next, XR_TYPE_SPATIAL_CONTAINER_LAYER_FRAME_END_INFO_EXT);
 
     // Validate the submission against the active render set.
     std::set<XrSpatialContainerEXT> seen;
@@ -875,9 +880,11 @@ XrResult XRAPI_CALL Layer_xrEndFrame(XrSession session, const XrFrameEndInfo* in
     // The copied layers still point at the app's next chains for this frame; hide the
     // structures the runtime does not know about while it reads them.
     std::vector<std::unique_ptr<ScopedChainUnlink>> unlinks;
+    unlinks.reserve(appLayerChains.size());
     for (const XrBaseInStructure* chain : appLayerChains) {
         unlinks.push_back(std::make_unique<ScopedChainUnlink>(
-            chain, std::initializer_list<XrStructureType>{XR_TYPE_SPATIAL_CONTAINER_COMPOSITION_LAYER_VIEW_CONFIGURATION_EXT}));
+            chain,
+            std::initializer_list<XrStructureType>{XR_TYPE_SPATIAL_CONTAINER_COMPOSITION_LAYER_VIEW_CONFIGURATION_EXT}));
     }
     for (auto& [handle, copies] : current) {
         for (LayerCopy& copy : copies) {
@@ -905,7 +912,8 @@ bool IsUnlocatableContainerSpace(XrSpace space) {
 
 void ClearSpaceLocation(XrSpaceLocation* location) {
     location->locationFlags = 0;
-    if (auto* velocity = const_cast<XrSpaceVelocity*>(FindInChain<XrSpaceVelocity>(location->next, XR_TYPE_SPACE_VELOCITY))) {
+    if (auto* velocity =
+            const_cast<XrSpaceVelocity*>(FindInChain<XrSpaceVelocity>(location->next, XR_TYPE_SPACE_VELOCITY))) {
         velocity->velocityFlags = 0;
     }
 }
@@ -1005,7 +1013,9 @@ XrResult XRAPI_CALL Layer_xrCreateSpatialContainerEXT(XrSession session, const X
     if (count >= GetConfig().maxContainers) return XR_ERROR_LIMIT_REACHED;
 
     auto c = std::make_unique<Container>();
-    c->handle = reinterpret_cast<XrSpatialContainerEXT>(static_cast<uintptr_t>(g_nextContainerId++));
+    // Handles are opaque to the app; a counter is enough.
+    c->handle = reinterpret_cast<XrSpatialContainerEXT>(  // NOLINT(performance-no-int-to-ptr)
+        static_cast<uintptr_t>(g_nextContainerId++));
     c->session = session;
     c->presentation = createInfo->graphicsPresentation;
     const bool hasSuggestion = suggested.width > 0 && suggested.height > 0 && suggested.depth > 0;
@@ -1054,7 +1064,8 @@ XrResult XRAPI_CALL Layer_xrDestroySpatialContainerEXT(XrSpatialContainerEXT spa
     return XR_SUCCESS;
 }
 
-XrResult XRAPI_CALL Layer_xrCreateSpatialContainerSpaceEXT(XrSession session, const XrSpatialContainerSpaceCreateInfoEXT* createInfo,
+XrResult XRAPI_CALL Layer_xrCreateSpatialContainerSpaceEXT(XrSession session,
+                                                           const XrSpatialContainerSpaceCreateInfoEXT* createInfo,
                                                            XrSpace* space) {
     Instance* inst;
     {
@@ -1144,7 +1155,8 @@ XrResult XRAPI_CALL Layer_xrGetSpatialContainerStateEXT(XrSpatialContainerEXT sp
 }
 
 XrResult XRAPI_CALL Layer_xrEnumerateSupportedSpatialContainerGraphicsPresentationsEXT(
-    XrInstance instance, XrSystemId, uint32_t capacity, uint32_t* count, XrSpatialContainerGraphicsPresentationEXT* presentations) {
+    XrInstance instance, XrSystemId, uint32_t capacity, uint32_t* count,
+    XrSpatialContainerGraphicsPresentationEXT* presentations) {
     std::lock_guard<std::mutex> lock(g_mutex);
     Instance* inst = GetInstance(instance);
     if (inst == nullptr) return XR_ERROR_HANDLE_INVALID;
@@ -1158,7 +1170,8 @@ XrResult XRAPI_CALL Layer_xrEnumerateSupportedSpatialContainerGraphicsPresentati
 
 // --- XR_EXT_spatial_container_self_rendering --------------------------------------------
 
-XrResult XRAPI_CALL Layer_xrBeginSpatialContainerRenderingEXT(XrSession session, const XrSpatialContainerBeginInfoEXT* info) {
+XrResult XRAPI_CALL Layer_xrBeginSpatialContainerRenderingEXT(XrSession session,
+                                                              const XrSpatialContainerBeginInfoEXT* info) {
     std::lock_guard<std::mutex> lock(g_mutex);
     Session* s = GetSession(session);
     Container* c = GetContainer(info->spatialContainer);
@@ -1188,9 +1201,11 @@ XrResult XRAPI_CALL Layer_xrEndSpatialContainerRenderingEXT(XrSession session, c
     return XR_SUCCESS;
 }
 
-XrResult XRAPI_CALL Layer_xrLocateSpatialContainerViewsEXT(XrSession session, const XrSpatialContainerViewsLocateInfoEXT* info,
-                                                           uint32_t viewStateCount, XrSpatialContainerViewStateEXT* viewStates,
-                                                           uint32_t viewCount, XrView* views) {
+XrResult XRAPI_CALL Layer_xrLocateSpatialContainerViewsEXT(XrSession session,
+                                                           const XrSpatialContainerViewsLocateInfoEXT* info,
+                                                           uint32_t viewStateCount,
+                                                           XrSpatialContainerViewStateEXT* viewStates, uint32_t viewCount,
+                                                           XrView* views) {
     std::lock_guard<std::mutex> lock(g_mutex);
     Session* s = GetSession(session);
     Instance* inst = GetInstanceForSession(s);
@@ -1242,8 +1257,8 @@ XrResult XRAPI_CALL Layer_xrLocateSpatialContainerViewsEXT(XrSession session, co
             onScreen = FitContainerViews(inst, s, c, locate.space, info->displayTime, containerViews, perContainer,
                                          &state.recommendedImageExtent);
         }
-        state.shouldSubmitLayers = s->runtimeShouldRender && onScreen &&
-                                   (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT);
+        state.shouldSubmitLayers =
+            s->runtimeShouldRender && onScreen && (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT);
     }
     return XR_SUCCESS;
 }
@@ -1256,7 +1271,8 @@ struct Intercept {
     int extension;  // 0: core, 1: XR_EXT_spatial_container, 2: self rendering
 };
 
-#define INTERCEPT(name, ext) {#name, reinterpret_cast<PFN_xrVoidFunction>(Layer_##name), ext}
+#define INTERCEPT(name, ext) \
+    { #name, reinterpret_cast<PFN_xrVoidFunction>(Layer_##name), ext }
 const Intercept kIntercepts[] = {
     INTERCEPT(xrDestroyInstance, 0),
     INTERCEPT(xrGetSystemProperties, 0),
@@ -1303,7 +1319,8 @@ XrResult XRAPI_CALL Layer_xrGetInstanceProcAddr(XrInstance instance, const char*
             if (std::strcmp(name, intercept.name) != 0) continue;
             if (intercept.extension == 2 && !inst->selfRenderingEnabled) break;
             // Space location wrappers are only useful if the runtime has the function.
-            if (intercept.function == reinterpret_cast<PFN_xrVoidFunction>(Layer_xrLocateSpaces) && !inst->next.LocateSpaces) break;
+            if (intercept.function == reinterpret_cast<PFN_xrVoidFunction>(Layer_xrLocateSpaces) && !inst->next.LocateSpaces)
+                break;
             if (intercept.function == reinterpret_cast<PFN_xrVoidFunction>(Layer_xrLocateSpacesKHR) &&
                 !inst->next.LocateSpacesKHR) {
                 break;

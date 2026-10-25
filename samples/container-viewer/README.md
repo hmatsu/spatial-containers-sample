@@ -18,7 +18,7 @@ On runtimes without the extension (such as existing OpenXR 1.0 runtimes), the vi
 
 ## Running
 
-```
+```sh
 godot --path . -- --model=C:/path/to/model.glb
 ```
 

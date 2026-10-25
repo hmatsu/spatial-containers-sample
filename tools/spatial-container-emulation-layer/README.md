@@ -28,7 +28,7 @@ The layer also validates what the spec requires of runtimes: duplicate, missing,
 
 Requires CMake 3.16+ and a C++17 compiler. On Linux, building the tests also needs the X11 development headers (`libx11-dev` on Debian and Ubuntu), which the OpenXR-SDK requires. The OpenXR-SDK (release 1.1.65) is downloaded automatically, or you can point `OPENXR_SDK_SOURCE_DIR` at a local checkout.
 
-```
+```sh
 cmake -S . -B build
 cmake --build build --config Release
 ```
@@ -39,7 +39,7 @@ The build directory then contains the layer library and its manifest, `XrApiLaye
 
 Point the loader at the directory that contains the manifest and enable the layer:
 
-```
+```text
 # Linux
 export XR_API_LAYER_PATH=/path/to/build
 export XR_ENABLE_API_LAYERS=XR_APILAYER_spatial_container_emulation
@@ -105,7 +105,7 @@ The same computation is what a runtime has to do for this part of the spec. See 
 - Container space locatability
 - The deny switches
 
-```
+```sh
 cmake -S . -B build
 cmake --build build
 ctest --test-dir build --output-on-failure

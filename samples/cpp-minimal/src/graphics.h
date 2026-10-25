@@ -16,8 +16,8 @@
 
 // What to draw for one view, in the space the views were located in.
 struct Scene {
-    Mat4 boxModel;     // Unit cube scaled to the container bounds (wireframe).
-    Mat4 cubeModel;    // Unit cube for the spinning solid cube.
+    Mat4 boxModel;   // Unit cube scaled to the container bounds (wireframe).
+    Mat4 cubeModel;  // Unit cube for the spinning solid cube.
     bool drawBox = false;
 };
 

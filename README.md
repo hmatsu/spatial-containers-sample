@@ -22,3 +22,23 @@ Samples and research notes for experimenting with OpenXR Spatial Containers (`XR
 ## License
 
 [MIT License](LICENSE)
+
+## Checks
+
+CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) builds and tests the C++ code on Linux (also with ASan and UBSan) and with MSVC on Windows, checks the Godot viewer's scripts, and runs the linters.
+
+To run the linters locally:
+
+```sh
+scripts/lint.sh        # check
+scripts/lint.sh --fix  # apply formatting, then check
+```
+
+| Tool | Files | Configuration |
+|---|---|---|
+| clang-format 18 | C++ | [.clang-format](.clang-format) |
+| clang-tidy 18 | C++ (static analysis) | [.clang-tidy](.clang-tidy) |
+| gdformat, gdlint (gdtoolkit 4.5) | GDScript | [gdlintrc](gdlintrc) |
+| markdownlint-cli2 | Markdown | [.markdownlint-cli2.yaml](.markdownlint-cli2.yaml) |
+| actionlint, shellcheck | Workflows, shell scripts | |
+| editorconfig-checker | All tracked files | [.editorconfig](.editorconfig) |

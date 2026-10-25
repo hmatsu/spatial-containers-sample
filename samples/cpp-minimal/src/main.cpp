@@ -33,13 +33,13 @@
 
 namespace {
 
-#define CHECK_XR(call)                                                              \
-    do {                                                                            \
-        const XrResult result_ = (call);                                            \
-        if (XR_FAILED(result_)) {                                                   \
+#define CHECK_XR(call)                                                                           \
+    do {                                                                                         \
+        const XrResult result_ = (call);                                                         \
+        if (XR_FAILED(result_)) {                                                                \
             std::fprintf(stderr, "%s failed: %d (%s:%d)\n", #call, result_, __FILE__, __LINE__); \
-            return false;                                                           \
-        }                                                                           \
+            return false;                                                                        \
+        }                                                                                        \
     } while (0)
 
 struct Options {
@@ -155,8 +155,9 @@ private:
         std::vector<XrExtensionProperties> available(count, {XR_TYPE_EXTENSION_PROPERTIES});
         CHECK_XR(xrEnumerateInstanceExtensionProperties(nullptr, count, &count, available.data()));
         for (const char* name : extensions) {
-            const bool found = std::any_of(available.begin(), available.end(),
-                                           [&](const XrExtensionProperties& p) { return std::strcmp(p.extensionName, name) == 0; });
+            const bool found = std::any_of(available.begin(), available.end(), [&](const XrExtensionProperties& p) {
+                return std::strcmp(p.extensionName, name) == 0;
+            });
             if (!found) {
                 std::fprintf(stderr,
                              "Required extension %s is not available. On runtimes without spatial container support, "
@@ -215,7 +216,8 @@ private:
 
         blendMode_ = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
         XrEnvironmentBlendMode modes[8];
-        if (XR_SUCCEEDED(xrEnumerateEnvironmentBlendModes(instance_, systemId_, viewConfig_, 8, &count, modes)) && count > 0) {
+        if (XR_SUCCEEDED(xrEnumerateEnvironmentBlendModes(instance_, systemId_, viewConfig_, 8, &count, modes)) &&
+            count > 0) {
             blendMode_ = modes[0];
         }
         return true;
@@ -297,9 +299,11 @@ private:
         const bool toImmersive = boundsMode_ == XR_SPATIAL_CONTAINER_BOUNDS_MODE_BOUNDED_EXT;
         if (toImmersive ? !supportsImmersive_ : !supportsBounded_) return;
         XrSpatialContainerBoundsModeRequestInfoEXT mode{XR_TYPE_SPATIAL_CONTAINER_BOUNDS_MODE_REQUEST_INFO_EXT};
-        mode.boundsMode = toImmersive ? XR_SPATIAL_CONTAINER_BOUNDS_MODE_IMMERSIVE_EXT : XR_SPATIAL_CONTAINER_BOUNDS_MODE_BOUNDED_EXT;
+        mode.boundsMode =
+            toImmersive ? XR_SPATIAL_CONTAINER_BOUNDS_MODE_IMMERSIVE_EXT : XR_SPATIAL_CONTAINER_BOUNDS_MODE_BOUNDED_EXT;
         // Asynchronous: the result arrives as BoundsChanged or BoundsModeRequestDenied.
-        if (XR_SUCCEEDED(ext_.RequestBoundsMode(container_, &mode))) std::printf("Requested %s\n", ModeName(mode.boundsMode));
+        if (XR_SUCCEEDED(ext_.RequestBoundsMode(container_, &mode)))
+            std::printf("Requested %s\n", ModeName(mode.boundsMode));
     }
 
     void PollEvents() {
@@ -414,7 +418,8 @@ private:
             locateInfo.viewLocateInfoCount = 1;
             locateInfo.viewLocateInfos = &locate;
             XrSpatialContainerViewStateEXT viewState{XR_TYPE_SPATIAL_CONTAINER_VIEW_STATE_EXT};
-            CHECK_XR(ext_.LocateViews(session_, &locateInfo, 1, &viewState, static_cast<uint32_t>(views_.size()), views_.data()));
+            CHECK_XR(
+                ext_.LocateViews(session_, &locateInfo, 1, &viewState, static_cast<uint32_t>(views_.size()), views_.data()));
 
             const bool posesValid = (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) &&
                                     (viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT);
@@ -423,7 +428,8 @@ private:
                 const Scene scene = BuildScene(frameState.predictedDisplayTime);
                 rendered = true;
                 for (uint32_t i = 0; i < views_.size() && rendered; ++i) {
-                    rendered = graphics_.RenderView(i, views_[i], viewState.recommendedImageExtent, scene, &projectionViews_[i]);
+                    rendered =
+                        graphics_.RenderView(i, views_[i], viewState.recommendedImageExtent, scene, &projectionViews_[i]);
                 }
             }
             if (rendered) {

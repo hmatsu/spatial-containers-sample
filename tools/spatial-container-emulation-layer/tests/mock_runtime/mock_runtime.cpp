@@ -60,7 +60,7 @@ bool HasContainerStruct(const void* next) {
 
 template <typename T>
 T MakeHandle() {
-    return reinterpret_cast<T>(static_cast<uintptr_t>(g_nextHandle++));
+    return reinterpret_cast<T>(static_cast<uintptr_t>(g_nextHandle++));  // NOLINT(performance-no-int-to-ptr)
 }
 
 void QueueState(XrSessionState state) {
@@ -96,7 +96,9 @@ XrResult XRAPI_CALL CreateInstance(const XrInstanceCreateInfo* info, XrInstance*
     return XR_SUCCESS;
 }
 
-XrResult XRAPI_CALL DestroyInstance(XrInstance) { return XR_SUCCESS; }
+XrResult XRAPI_CALL DestroyInstance(XrInstance) {
+    return XR_SUCCESS;
+}
 
 XrResult XRAPI_CALL GetInstanceProperties(XrInstance, XrInstanceProperties* properties) {
     properties->runtimeVersion = XR_MAKE_VERSION(0, 1, 0);
@@ -196,7 +198,9 @@ XrResult XRAPI_CALL EndSession(XrSession) {
     return XR_SUCCESS;
 }
 
-XrResult XRAPI_CALL RequestExitSession(XrSession) { return XR_SUCCESS; }
+XrResult XRAPI_CALL RequestExitSession(XrSession) {
+    return XR_SUCCESS;
+}
 
 XrResult XRAPI_CALL PollEvent(XrInstance, XrEventDataBuffer* event) {
     std::lock_guard<std::mutex> lock(g_mutex);
@@ -268,7 +272,9 @@ XrResult XRAPI_CALL CreateReferenceSpace(XrSession, const XrReferenceSpaceCreate
     return XR_SUCCESS;
 }
 
-XrResult XRAPI_CALL DestroySpace(XrSpace) { return XR_SUCCESS; }
+XrResult XRAPI_CALL DestroySpace(XrSpace) {
+    return XR_SUCCESS;
+}
 
 XrResult XRAPI_CALL LocateSpace(XrSpace space, XrSpace baseSpace, XrTime, XrSpaceLocation* location) {
     std::lock_guard<std::mutex> lock(g_mutex);
@@ -284,10 +290,10 @@ XrResult XRAPI_CALL ConvertTimespecTimeToTimeKHR(XrInstance, const timespec* ts,
 }
 
 XrResult XRAPI_CALL GetInstanceProcAddr(XrInstance, const char* name, PFN_xrVoidFunction* function) {
-#define ENTRY(fn)                                              \
-    if (std::strcmp(name, "xr" #fn) == 0) {                    \
+#define ENTRY(fn)                                             \
+    if (std::strcmp(name, "xr" #fn) == 0) {                   \
         *function = reinterpret_cast<PFN_xrVoidFunction>(fn); \
-        return XR_SUCCESS;                                     \
+        return XR_SUCCESS;                                    \
     }
     ENTRY(EnumerateInstanceExtensionProperties)
     ENTRY(CreateInstance)
