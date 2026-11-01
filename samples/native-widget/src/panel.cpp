@@ -85,7 +85,7 @@ void DrawColon(Image& image, int x, int y, int w, int h, int t, Color color) {
     image.FillRect(cx, y + 2 * h / 3 - t / 2, t, t, color);
 }
 
-int DrawText(Image& image, const std::string& text, int x, int y, int scale, Color color) {
+int DrawLabel(Image& image, const std::string& text, int x, int y, int scale, Color color) {
     const int advance = 6 * scale;
     for (size_t i = 0; i < text.size(); ++i) {
         const Glyph* glyph = FindGlyph(text[i]);
@@ -127,8 +127,8 @@ void RenderPanel(const PanelState& state, Image& image) {
     DrawTwoPairs(image, state.hour, state.minute, (kWidth - kClockStyle.Width()) / 2, kClockY, kClockStyle, kClock);
 
     const Color accent = !state.running ? kPaused : state.focus ? kFocus : kBreak;
-    DrawText(image, state.focus ? "FOCUS" : "BREAK", kMargin, kCountdownY, 4, state.focus ? kFocus : kBreak);
-    if (!state.running) DrawText(image, "PAUSED", kMargin, kCountdownY + 40, 3, kPaused);
+    DrawLabel(image, state.focus ? "FOCUS" : "BREAK", kMargin, kCountdownY, 4, state.focus ? kFocus : kBreak);
+    if (!state.running) DrawLabel(image, "PAUSED", kMargin, kCountdownY + 40, 3, kPaused);
 
     const int64_t seconds = std::max<int64_t>(state.remainingSeconds, 0);
     DrawTwoPairs(image, static_cast<int>(std::min<int64_t>(seconds / 60, 99)), static_cast<int>(seconds % 60),

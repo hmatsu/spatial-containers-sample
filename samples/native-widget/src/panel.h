@@ -49,9 +49,10 @@ static_assert(sizeof(Color) == 4, "Color must be tightly packed RGBA8");
 void DrawDigit(Image& image, int digit, int x, int y, int w, int h, int thickness, Color color);
 // The two dots between hours and minutes, centered in a box `w` wide.
 void DrawColon(Image& image, int x, int y, int w, int h, int thickness, Color color);
-// Uppercase text in a 5x7 pixel font, each font pixel `scale` image pixels. Characters
+// Uppercase text in a 5x7 pixel font (not named DrawText: windows.h defines that as a
+// macro), each font pixel `scale` image pixels. Characters
 // the font does not have are drawn as spaces. Returns the width drawn.
-int DrawText(Image& image, const std::string& text, int x, int y, int scale, Color color);
+int DrawLabel(Image& image, const std::string& text, int x, int y, int scale, Color color);
 
 // "HH:MM"-style pair of two-digit numbers in seven-segment digits.
 struct DigitStyle {

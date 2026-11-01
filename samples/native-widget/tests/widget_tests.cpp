@@ -123,15 +123,15 @@ TEST_CASE("Seven-segment digits light the right segments") {
     CHECK(lit(2) == "abdeg");
 }
 
-TEST_CASE("DrawText draws known letters and skips unknown ones") {
+TEST_CASE("DrawLabel draws known letters and skips unknown ones") {
     Image image(40, 10);
     const Color c = Color::Rgba(9, 9, 9);
-    CHECK(DrawText(image, "L", 0, 0, 1, c) == 5);
+    CHECK(DrawLabel(image, "L", 0, 0, 1, c) == 5);
     CHECK(image.at(0, 0) == c);  // The vertical stroke of L.
     CHECK(image.at(4, 6) == c);  // Its foot.
     CHECK(image.at(4, 0) == Color{});
     Image blank(40, 10);
-    DrawText(blank, "?", 0, 0, 1, c);
+    DrawLabel(blank, "?", 0, 0, 1, c);
     for (int y = 0; y < 10; ++y)
         for (int x = 0; x < 40; ++x) CHECK(blank.at(x, y) == Color{});
 }
