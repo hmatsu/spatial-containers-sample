@@ -7,8 +7,9 @@
 # Tools (versions used in CI): clang-format and clang-tidy 18, gdtoolkit 4.5
 # (gdformat, gdlint), markdownlint-cli2 0.18, actionlint 1.7 with shellcheck,
 # editorconfig-checker 3, shellcheck. Override the clang tools with CLANG_FORMAT / CLANG_TIDY.
-# clang-tidy needs a compile database; it is configured in LINT_BUILD_DIR
-# (default: build-lint) if missing.
+# clang-tidy needs compile databases; the two CMake projects are configured under
+# LINT_BUILD_DIR (default: build-lint) if missing. The native widget's Vulkan
+# backend is checked only when the Vulkan headers are installed.
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
@@ -25,8 +26,10 @@ mapfile -t gd_files < <(git ls-files '*.gd')
 mapfile -t md_files < <(git ls-files '*.md')
 mapfile -t all_files < <(git ls-files)
 mapfile -t sh_files < <(git ls-files '*.sh')
-# Direct3D 11 code only compiles on Windows, so clang-tidy skips it here.
-mapfile -t tidy_files < <(git ls-files '*.cpp' | grep -v '_d3d11\.cpp$')
+# Direct3D 11 code only compiles on Windows, so clang-tidy skips it here. The native
+# widget is its own CMake project; everything else is built by the C++ sample's.
+mapfile -t widget_tidy_files < <(git ls-files 'samples/native-widget/*.cpp' | grep -v '_d3d11\.cpp$')
+mapfile -t tidy_files < <(git ls-files '*.cpp' | grep -v '_d3d11\.cpp$' | grep -v '^samples/native-widget/')
 
 failed=()
 run() {
@@ -44,10 +47,15 @@ fi
 
 run clang-format "$CLANG_FORMAT" --dry-run --Werror "${cpp_files[@]}"
 
-if [[ ! -f "$LINT_BUILD_DIR/compile_commands.json" ]]; then
-    cmake -S samples/cpp-minimal -B "$LINT_BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON > /dev/null
-fi
-run clang-tidy "$CLANG_TIDY" -p "$LINT_BUILD_DIR" --quiet "${tidy_files[@]}"
+configure() {
+    if [[ ! -f "$2/compile_commands.json" ]]; then
+        cmake -S "$1" -B "$2" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON > /dev/null
+    fi
+}
+configure samples/cpp-minimal "$LINT_BUILD_DIR/cpp-minimal"
+configure samples/native-widget "$LINT_BUILD_DIR/native-widget"
+run clang-tidy "$CLANG_TIDY" -p "$LINT_BUILD_DIR/cpp-minimal" --quiet "${tidy_files[@]}"
+run clang-tidy-widget "$CLANG_TIDY" -p "$LINT_BUILD_DIR/native-widget" --quiet "${widget_tidy_files[@]}"
 
 run gdformat gdformat --check --line-length "$GD_LINE_LENGTH" "${gd_files[@]}"
 run gdlint gdlint "${gd_files[@]}"

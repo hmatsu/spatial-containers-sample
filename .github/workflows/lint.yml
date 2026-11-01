@@ -24,7 +24,7 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends clang-format-18 clang-tidy-18 shellcheck libx11-dev ninja-build
+          sudo apt-get install -y --no-install-recommends clang-format-18 clang-tidy-18 shellcheck libx11-dev libvulkan-dev ninja-build
           pipx install "gdtoolkit==4.5.0"
           pipx install "editorconfig-checker==3.11.1"
           npm install --global "markdownlint-cli2@0.18.1"
