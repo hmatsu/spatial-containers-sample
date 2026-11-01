@@ -49,6 +49,7 @@ While the extension is active, input is accepted only when the runtime reports t
 - **Asynchronous requests**: Bounds mode requests are asynchronous. The result arrives as the `spatial_container_bounds_changed` signal (success) or `spatial_container_bounds_mode_request_denied` (denied), and the layout is updated only after the signal arrives.
 - **While hidden**: `_process` is stopped while the container is not visible. The spec also expects apps to stop CPU and GPU work while hidden.
 - **Input routing**: With the extension, keyboard and controller input is ignored unless the container is interactable.
+- **Background**: In a bounded container the background is transparent, so other apps and the surroundings show around the content. In immersive mode and in emulation it is solid black. Godot marks the layer as alpha blended only when the runtime accepts the alpha environment blend mode, which project.godot requests; on runtimes that only offer opaque blending the background stays black.
 - **Status display**: A `Label3D` shows the extension state (active or emulated), the mode, the bounds size, visible / interactable, and the content offset when it applies. This is useful for visually checking a runtime while debugging it.
 
 ## Tests
