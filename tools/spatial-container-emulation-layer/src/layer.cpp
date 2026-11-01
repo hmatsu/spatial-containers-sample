@@ -147,6 +147,8 @@ struct Instance {
     Dispatch next;
     bool containersEnabled = false;
     bool selfRenderingEnabled = false;
+    bool overlay = false;         // Runtime sessions are XR_EXTX_overlay sessions.
+    bool appEnabledOverlay = false;
     std::deque<XrEventDataBuffer> events;
 };
 
@@ -445,7 +447,16 @@ XrResult XRAPI_CALL Layer_xrCreateSession(XrInstance instance, const XrSessionCr
     XrResult result;
     {
         ScopedChainUnlink unlink(createInfo, {XR_TYPE_SESSION_CREATE_INFO_SPATIAL_CONTAINERS_EXT});
-        result = inst->next.CreateSession(instance, createInfo, session);
+        // As an overlay, the runtime composites this app on top of another one instead of
+        // switching to it: the closest a 1.x runtime gets to showing two containers.
+        XrSessionCreateInfoOverlayEXTX overlay{XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX};
+        XrSessionCreateInfo down = *createInfo;
+        if (emulated && inst->overlay) {
+            overlay.next = createInfo->next;
+            overlay.sessionLayersPlacement = static_cast<uint32_t>(GetConfig().overlayPlacement);
+            down.next = &overlay;
+        }
+        result = inst->next.CreateSession(instance, &down, session);
     }
     if (XR_FAILED(result)) return result;
 
@@ -542,6 +553,11 @@ XrResult XRAPI_CALL Layer_xrPollEvent(XrInstance instance, XrEventDataBuffer* ev
         }
         XrResult result = inst->next.PollEvent(instance, eventData);
         if (result != XR_SUCCESS) return result;
+        if (eventData->type == XR_TYPE_EVENT_DATA_MAIN_SESSION_VISIBILITY_CHANGED_EXTX && !inst->appEnabledOverlay) {
+            // Caused by the overlay session the layer created; the app did not ask for it.
+            Log("main session visible=%d", reinterpret_cast<XrEventDataMainSessionVisibilityChangedEXTX*>(eventData)->visible);
+            continue;
+        }
         if (eventData->type != XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED) return result;
         const auto event = *reinterpret_cast<XrEventDataSessionStateChanged*>(eventData);
         Session* s = GetSession(event.session);
@@ -1192,10 +1208,18 @@ XrResult XRAPI_CALL Layer_xrCreateApiLayerInstance(const XrInstanceCreateInfo* i
     const char* timeExtension = XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME;
     const char* timeFunction = "xrConvertTimespecTimeToTimeKHR";
 #endif
-    const bool appHasTime = std::any_of(extensions.begin(), extensions.end(),
-                                        [&](const char* ext) { return std::strcmp(ext, timeExtension) == 0; });
-    bool addedTime = containers && !appHasTime;
-    if (addedTime) extensions.push_back(timeExtension);
+    auto appHas = [&](const char* name) {
+        return std::any_of(extensions.begin(), extensions.end(), [&](const char* ext) { return std::strcmp(ext, name) == 0; });
+    };
+    const bool appHasTime = appHas(timeExtension);
+    const bool appHasOverlay = appHas(XR_EXTX_OVERLAY_EXTENSION_NAME);
+    // Optional extensions the layer adds itself; dropped one by one, last first, if the
+    // runtime does not have them.
+    std::vector<const char*> added;
+    if (containers && !appHasTime) added.push_back(timeExtension);
+    if (containers && GetConfig().overlayPlacement >= 0 && !appHasOverlay) added.push_back(XR_EXTX_OVERLAY_EXTENSION_NAME);
+    const size_t appExtensionCount = extensions.size();
+    extensions.insert(extensions.end(), added.begin(), added.end());
 
     XrInstanceCreateInfo downInfo = *info;
     XrApiLayerCreateInfo downLayerInfo = *layerInfo;
@@ -1203,18 +1227,24 @@ XrResult XRAPI_CALL Layer_xrCreateApiLayerInstance(const XrInstanceCreateInfo* i
     downInfo.enabledExtensionNames = extensions.data();
     downInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     XrResult result = nextInfo->nextCreateApiLayerInstance(&downInfo, &downLayerInfo, instance);
-    if (result == XR_ERROR_EXTENSION_NOT_PRESENT && addedTime) {
+    while (result == XR_ERROR_EXTENSION_NOT_PRESENT && extensions.size() > appExtensionCount) {
+        Log("runtime lacks %s; continuing without it", extensions.back());
         extensions.pop_back();
-        addedTime = false;
         downInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         result = nextInfo->nextCreateApiLayerInstance(&downInfo, &downLayerInfo, instance);
     }
     if (XR_FAILED(result)) return result;
+    auto enabled = [&](const char* name) {
+        return std::any_of(extensions.begin(), extensions.end(), [&](const char* ext) { return std::strcmp(ext, name) == 0; });
+    };
+    const bool addedTime = !appHasTime && enabled(timeExtension);
 
     auto inst = std::make_unique<Instance>();
     inst->handle = *instance;
     inst->containersEnabled = containers;
     inst->selfRenderingEnabled = containers && selfRendering;
+    inst->appEnabledOverlay = appHasOverlay;
+    inst->overlay = containers && GetConfig().overlayPlacement >= 0 && enabled(XR_EXTX_OVERLAY_EXTENSION_NAME);
     Dispatch& next = inst->next;
     PFN_xrGetInstanceProcAddr gipa = nextInfo->nextGetInstanceProcAddr;
     next.GetInstanceProcAddr = gipa;
@@ -1238,8 +1268,8 @@ XrResult XRAPI_CALL Layer_xrCreateApiLayerInstance(const XrInstanceCreateInfo* i
     LoadNext(gipa, *instance, "xrLocateSpaces", &next.LocateSpaces);
     LoadNext(gipa, *instance, "xrLocateSpacesKHR", &next.LocateSpacesKHR);
     if (addedTime || appHasTime) LoadNext(gipa, *instance, timeFunction, &next.ConvertTime);
-    Log("instance created: spatial_container=%d self_rendering=%d time_conversion=%d", containers, selfRendering,
-        next.ConvertTime != nullptr);
+    Log("instance created: spatial_container=%d self_rendering=%d time_conversion=%d overlay=%d", containers,
+        selfRendering, next.ConvertTime != nullptr, inst->overlay);
 
     std::lock_guard<std::mutex> lock(g_mutex);
     g_instances[*instance] = std::move(inst);

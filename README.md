@@ -33,7 +33,7 @@ Three GitHub Actions workflows run the checks:
 |---|---|---|---|
 | [CI](.github/workflows/ci.yml) | C++ build and tests on Linux (also with ASan and UBSan) and with MSVC on Windows; the Godot viewer's script checks and unit tests | Every pull request and push to `main`, except changes to documentation or to the other workflows' files | About 2 minutes |
 | [Lint](.github/workflows/lint.yml) | Linters and static analysis | Every pull request and push to `main` | About 2 minutes |
-| [E2E](.github/workflows/e2e.yml) | The Godot viewer on Monado, in emulation and through the emulation layer | Pull requests and pushes to `main` that change the layer, the viewer or the test; twice a week on a schedule; manually | About 2 minutes, or about 30 when Godot has to be built |
+| [E2E](.github/workflows/e2e.yml) | The Godot viewer and the native widget on Monado, alone and at the same time | Pull requests and pushes to `main` that change the layer, the samples or the test; twice a week on a schedule; manually | About 2 minutes, or about 30 when Godot has to be built |
 
 E2E builds Godot from a pinned commit and caches the build. The cache is built on `main`, so pull requests reuse it. The scheduled runs keep it from expiring (GitHub evicts caches not used for 7 days) and catch changes outside this repository, such as the runner image, Monado or Mesa. All three workflows can also be started by hand from the Actions tab.
 
@@ -46,7 +46,7 @@ E2E builds Godot from a pinned commit and caches the build. The cache is built o
 | Emulation layer end-to-end tests (loader + mock runtime) | [tools/spatial-container-emulation-layer/tests/layer_test.cpp](tools/spatial-container-emulation-layer/tests/layer_test.cpp) | Linux |
 | C++ sample lifecycle test (headless, through the layer) | [samples/cpp-minimal/CMakeLists.txt](samples/cpp-minimal/CMakeLists.txt) | Linux |
 | Native widget lifecycle test (headless, through the layer) | [samples/native-widget/CMakeLists.txt](samples/native-widget/CMakeLists.txt) | Linux |
-| Godot viewer end-to-end tests (Monado, software Vulkan, Xvfb) | [tests/e2e](tests/e2e) | Linux |
+| End-to-end tests on Monado (software Vulkan, Xvfb): the viewer, the widget, and both at once | [tests/e2e](tests/e2e) | Linux |
 
 To run the linters locally:
 

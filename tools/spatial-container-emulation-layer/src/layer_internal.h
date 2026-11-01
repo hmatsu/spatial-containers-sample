@@ -32,6 +32,7 @@ struct Config {
     bool denyVisibleRequests = false;
     bool denyBoundsModeRequests = false;
     bool tightFov = true;
+    int overlayPlacement = -1;  // >= 0: create the runtime session as an XR_EXTX_overlay session.
     bool log = false;
 };
 
@@ -77,6 +78,13 @@ inline Config ParseConfig(SettingLookup lookup) {
     config.denyVisibleRequests = Flag(lookup, "XR_SCEMU_DENY_VISIBLE_REQUESTS");
     config.denyBoundsModeRequests = Flag(lookup, "XR_SCEMU_DENY_BOUNDS_MODE_REQUESTS");
     if (lookup("XR_SCEMU_TIGHT_FOV") != nullptr) config.tightFov = Flag(lookup, "XR_SCEMU_TIGHT_FOV");
+    if (const char* placement = lookup("XR_SCEMU_OVERLAY_PLACEMENT")) {
+        char* end = nullptr;
+        const long value = std::strtol(placement, &end, 10);
+        if (end != placement && *end == '\0' && value >= 0 && value <= 0x7fffffff) {
+            config.overlayPlacement = static_cast<int>(value);
+        }
+    }
     config.log = Flag(lookup, "XR_SCEMU_LOG");
     return config;
 }

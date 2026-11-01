@@ -105,6 +105,15 @@ TEST_CASE("ParseConfig reads every setting") {
     CHECK(config.log);
 }
 
+TEST_CASE("ParseConfig reads the overlay placement") {
+    CHECK(Parse({}).overlayPlacement == -1);
+    CHECK(Parse({{"XR_SCEMU_OVERLAY_PLACEMENT", "0"}}).overlayPlacement == 0);
+    CHECK(Parse({{"XR_SCEMU_OVERLAY_PLACEMENT", "3"}}).overlayPlacement == 3);
+    CHECK(Parse({{"XR_SCEMU_OVERLAY_PLACEMENT", "-1"}}).overlayPlacement == -1);
+    CHECK(Parse({{"XR_SCEMU_OVERLAY_PLACEMENT", "2x"}}).overlayPlacement == -1);
+    CHECK(Parse({{"XR_SCEMU_OVERLAY_PLACEMENT", ""}}).overlayPlacement == -1);
+}
+
 TEST_CASE("ParseConfig rejects invalid values") {
     SUBCASE("non-positive bounds keep the default") {
         const Config config = Parse({{"XR_SCEMU_BOUNDS", "0.3,0,0.2"}});
