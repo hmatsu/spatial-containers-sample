@@ -55,7 +55,7 @@ native_widget [--headless] [--graphics vulkan|d3d11] [--seconds N]
 | `--focus-minutes M`, `--break-minutes M` | 25, 5 | Phase lengths |
 | `--start` | paused | Start the timer right away (also useful without a controller) |
 
-On a runtime without spatial container support, enable the [emulation layer](../../tools/spatial-container-emulation-layer). To place the widget next to another app there, give each process its own `XR_SCEMU_POSITION`.
+On a runtime without spatial container support, enable the [emulation layer](../../tools/spatial-container-emulation-layer). To place the widget next to another app there, give each process its own `XR_SCEMU_POSITION`. A 1.x runtime usually shows only one app at a time; if it has `XR_EXTX_overlay` (Monado does), also set `XR_SCEMU_OVERLAY_PLACEMENT=1` for the widget, so it is shown on top of the other app instead of replacing it. The [end-to-end tests](../../tests/e2e) run it this way next to the Godot viewer.
 
 ## Tests
 

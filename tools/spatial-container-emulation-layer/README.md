@@ -66,6 +66,7 @@ All settings are environment variables.
 | `XR_SCEMU_DENY_VISIBLE_REQUESTS` | off | Deny every show request, to test the app's handling of `VisibleRequestDenied`. |
 | `XR_SCEMU_DENY_BOUNDS_MODE_REQUESTS` | off | Deny bounds mode requests for visible containers, to test `BoundsModeRequestDenied`. Requests for hidden containers are still honored, as the spec requires. |
 | `XR_SCEMU_TIGHT_FOV` | on | Fit each view's FOV to bounded containers (see below). Set to `0` to return the runtime's full views. |
+| `XR_SCEMU_OVERLAY_PLACEMENT` | unset | If set to a number, the runtime session is created as an `XR_EXTX_overlay` session with that placement, when the runtime has the extension. The runtime then shows this app on top of another one instead of switching to it. This is the closest a 1.x runtime gets to two containers side by side. Use it for the second app. |
 | `XR_SCEMU_LOG` | off | Log state changes to stderr. |
 
 For a desktop display such as the SRD, set `XR_SCEMU_POSITION` to the center of the display volume and `XR_SCEMU_BOUNDS` to its size in the runtime's LOCAL space.
