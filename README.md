@@ -7,6 +7,7 @@ Samples and research notes for experimenting with OpenXR Spatial Containers (`XR
 | Path | Description |
 |---|---|
 | [samples/container-viewer](samples/container-viewer) | 3D model viewer built with Godot 4.8 (switches between bounded and immersive, with emulation when the extension is unavailable) |
+| [samples/native-widget](samples/native-widget) | Resident clock and pomodoro widget in C++: a quad layer in a bounded container, updated only when it changes; Vulkan and Direct3D 11 |
 | [samples/cpp-minimal](samples/cpp-minimal) | Minimal C++ app using only the OpenXR SDK, with a Direct3D 11 backend and a headless mode for tests |
 | [tools/spatial-container-emulation-layer](tools/spatial-container-emulation-layer) | OpenXR API layer that emulates both extensions on runtimes without them, with a mock runtime and end-to-end tests |
 | [docs/srd-runtime-notes.md](docs/srd-runtime-notes.md) | Notes on adding Spatial Containers support to a Spatial Reality Display runtime |
@@ -39,10 +40,12 @@ E2E builds Godot from a pinned commit and caches the build. The cache is built o
 | Tests | Where | Runs on |
 |---|---|---|
 | Emulation layer unit tests (doctest) | [tools/spatial-container-emulation-layer/tests/unit_tests.cpp](tools/spatial-container-emulation-layer/tests/unit_tests.cpp) | Linux, Windows |
+| Native widget unit tests (doctest) | [samples/native-widget/tests/widget_tests.cpp](samples/native-widget/tests/widget_tests.cpp) | Linux, Windows |
 | C++ sample math unit tests (doctest) | [samples/cpp-minimal/tests/math_tests.cpp](samples/cpp-minimal/tests/math_tests.cpp) | Linux, Windows |
 | Godot viewer unit tests | [samples/container-viewer/tests/run_tests.gd](samples/container-viewer/tests/run_tests.gd) | Linux (Godot headless) |
 | Emulation layer end-to-end tests (loader + mock runtime) | [tools/spatial-container-emulation-layer/tests/layer_test.cpp](tools/spatial-container-emulation-layer/tests/layer_test.cpp) | Linux |
 | C++ sample lifecycle test (headless, through the layer) | [samples/cpp-minimal/CMakeLists.txt](samples/cpp-minimal/CMakeLists.txt) | Linux |
+| Native widget lifecycle test (headless, through the layer) | [samples/native-widget/CMakeLists.txt](samples/native-widget/CMakeLists.txt) | Linux |
 | Godot viewer end-to-end tests (Monado, software Vulkan, Xvfb) | [tests/e2e](tests/e2e) | Linux |
 
 To run the linters locally:

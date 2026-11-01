@@ -45,21 +45,28 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build libx11-dev
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build libx11-dev libvulkan-dev
       - name: Configure
-        # The C++ sample also builds the emulation layer, its mock runtime and their tests.
-        run: >
-          set -o pipefail;
-          cmake -S samples/cpp-minimal -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }}
-          -DCMAKE_CXX_FLAGS="${{ matrix.config.flags }}"
-          -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.config.flags }}"
-          -DCMAKE_SHARED_LINKER_FLAGS="${{ matrix.config.flags }}"
-          2>&1 | tee ci.log
+        # Each sample also builds the emulation layer, its mock runtime and their tests.
+        run: |
+          set -o pipefail
+          for project in cpp-minimal native-widget; do
+            cmake -S "samples/$project" -B "build/$project" -G Ninja \
+              -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+              -DCMAKE_CXX_FLAGS="${{ matrix.config.flags }}" \
+              -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.config.flags }}" \
+              -DCMAKE_SHARED_LINKER_FLAGS="${{ matrix.config.flags }}" 2>&1 | tee ci.log
+          done
       - name: Build
-        run: set -o pipefail; cmake --build build 2>&1 | tee ci.log
+        run: |
+          set -o pipefail
+          for project in cpp-minimal native-widget; do cmake --build "build/$project" 2>&1 | tee ci.log; done
       - name: Test
-        run: set -o pipefail; ctest --test-dir build --output-on-failure 2>&1 | tee ci.log
+        run: |
+          set -o pipefail
+          for project in cpp-minimal native-widget; do
+            ctest --test-dir "build/$project" --output-on-failure 2>&1 | tee ci.log
+          done
       - name: Report failure
         # Put the end of the failing step's output in an annotation, so it is visible
         # without opening the log.
@@ -76,12 +83,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Build
-        # The C++ sample also builds the emulation layer and the unit tests.
+        # Each sample also builds the emulation layer and the unit tests.
         run: |
           cmake -S samples/cpp-minimal -B build
           cmake --build build --config Release
+          cmake -S samples/native-widget -B build-widget
+          cmake --build build-widget --config Release
       - name: Unit tests
-        run: ctest --test-dir build -C Release --output-on-failure
+        run: |
+          ctest --test-dir build -C Release --output-on-failure
+          ctest --test-dir build-widget -C Release --output-on-failure
       - name: Upload binaries
         uses: actions/upload-artifact@v5
         with:
@@ -91,6 +102,7 @@ jobs:
             build/emulation_layer/Release/XrApiLayer_spatial_container_emulation.json
             build/Release/cpp_minimal.exe
             build/Release/openxr_loader.dll
+            build-widget/Release/native_widget.exe
           if-no-files-found: error
 
   godot:

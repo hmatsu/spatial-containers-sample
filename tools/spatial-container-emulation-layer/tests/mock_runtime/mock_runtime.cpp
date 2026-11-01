@@ -284,6 +284,41 @@ XrResult XRAPI_CALL LocateSpace(XrSpace space, XrSpace baseSpace, XrTime, XrSpac
     return XR_SUCCESS;
 }
 
+// Input: accepted, but no device ever reports anything.
+XrResult XRAPI_CALL StringToPath(XrInstance, const char*, XrPath* path) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    *path = g_nextHandle++;
+    return XR_SUCCESS;
+}
+XrResult XRAPI_CALL CreateActionSet(XrInstance, const XrActionSetCreateInfo*, XrActionSet* actionSet) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    *actionSet = MakeHandle<XrActionSet>();
+    return XR_SUCCESS;
+}
+XrResult XRAPI_CALL DestroyActionSet(XrActionSet) {
+    return XR_SUCCESS;
+}
+XrResult XRAPI_CALL CreateAction(XrActionSet, const XrActionCreateInfo*, XrAction* action) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    *action = MakeHandle<XrAction>();
+    return XR_SUCCESS;
+}
+XrResult XRAPI_CALL SuggestInteractionProfileBindings(XrInstance, const XrInteractionProfileSuggestedBinding*) {
+    return XR_SUCCESS;
+}
+XrResult XRAPI_CALL AttachSessionActionSets(XrSession, const XrSessionActionSetsAttachInfo*) {
+    return XR_SUCCESS;
+}
+XrResult XRAPI_CALL SyncActions(XrSession, const XrActionsSyncInfo*) {
+    return XR_SUCCESS;
+}
+XrResult XRAPI_CALL GetActionStateBoolean(XrSession, const XrActionStateGetInfo*, XrActionStateBoolean* state) {
+    state->currentState = XR_FALSE;
+    state->changedSinceLastSync = XR_FALSE;
+    state->isActive = XR_FALSE;
+    return XR_SUCCESS;
+}
+
 XrResult XRAPI_CALL ConvertTimespecTimeToTimeKHR(XrInstance, const timespec* ts, XrTime* time) {
     *time = static_cast<XrTime>(ts->tv_sec) * 1000000000 + ts->tv_nsec;
     return XR_SUCCESS;
@@ -317,6 +352,14 @@ XrResult XRAPI_CALL GetInstanceProcAddr(XrInstance, const char* name, PFN_xrVoid
     ENTRY(CreateReferenceSpace)
     ENTRY(DestroySpace)
     ENTRY(LocateSpace)
+    ENTRY(StringToPath)
+    ENTRY(CreateActionSet)
+    ENTRY(DestroyActionSet)
+    ENTRY(CreateAction)
+    ENTRY(SuggestInteractionProfileBindings)
+    ENTRY(AttachSessionActionSets)
+    ENTRY(SyncActions)
+    ENTRY(GetActionStateBoolean)
     ENTRY(ConvertTimespecTimeToTimeKHR)
     ENTRY(GetInstanceProcAddr)
 #undef ENTRY
