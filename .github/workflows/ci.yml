@@ -84,15 +84,31 @@ jobs:
       - uses: actions/checkout@v5
       - name: Build
         # Each sample also builds the emulation layer and the unit tests.
+        shell: bash
         run: |
-          cmake -S samples/cpp-minimal -B build
-          cmake --build build --config Release
-          cmake -S samples/native-widget -B build-widget
-          cmake --build build-widget --config Release
+          set -o pipefail
+          {
+            cmake -S samples/cpp-minimal -B build
+            cmake --build build --config Release
+            cmake -S samples/native-widget -B build-widget
+            cmake --build build-widget --config Release
+          } 2>&1 | tee ci.log
       - name: Unit tests
+        shell: bash
         run: |
-          ctest --test-dir build -C Release --output-on-failure
-          ctest --test-dir build-widget -C Release --output-on-failure
+          set -o pipefail
+          {
+            ctest --test-dir build -C Release --output-on-failure
+            ctest --test-dir build-widget -C Release --output-on-failure
+          } 2>&1 | tee ci.log
+      - name: Report failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo -n "::error title=Last output::"
+            grep -E "error|Error|FAILED|failed" ci.log | tail -n 40 | sed -e 's/%/%25/g' -e 's/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g'
+          } || true
       - name: Upload binaries
         uses: actions/upload-artifact@v5
         with:
