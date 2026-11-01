@@ -147,7 +147,7 @@ struct Instance {
     Dispatch next;
     bool containersEnabled = false;
     bool selfRenderingEnabled = false;
-    bool overlay = false;         // Runtime sessions are XR_EXTX_overlay sessions.
+    bool overlay = false;  // Runtime sessions are XR_EXTX_overlay sessions.
     bool appEnabledOverlay = false;
     std::deque<XrEventDataBuffer> events;
 };
@@ -555,7 +555,8 @@ XrResult XRAPI_CALL Layer_xrPollEvent(XrInstance instance, XrEventDataBuffer* ev
         if (result != XR_SUCCESS) return result;
         if (eventData->type == XR_TYPE_EVENT_DATA_MAIN_SESSION_VISIBILITY_CHANGED_EXTX && !inst->appEnabledOverlay) {
             // Caused by the overlay session the layer created; the app did not ask for it.
-            Log("main session visible=%d", reinterpret_cast<XrEventDataMainSessionVisibilityChangedEXTX*>(eventData)->visible);
+            Log("main session visible=%d",
+                reinterpret_cast<XrEventDataMainSessionVisibilityChangedEXTX*>(eventData)->visible);
             continue;
         }
         if (eventData->type != XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED) return result;
@@ -1209,7 +1210,8 @@ XrResult XRAPI_CALL Layer_xrCreateApiLayerInstance(const XrInstanceCreateInfo* i
     const char* timeFunction = "xrConvertTimespecTimeToTimeKHR";
 #endif
     auto appHas = [&](const char* name) {
-        return std::any_of(extensions.begin(), extensions.end(), [&](const char* ext) { return std::strcmp(ext, name) == 0; });
+        return std::any_of(extensions.begin(), extensions.end(),
+                           [&](const char* ext) { return std::strcmp(ext, name) == 0; });
     };
     const bool appHasTime = appHas(timeExtension);
     const bool appHasOverlay = appHas(XR_EXTX_OVERLAY_EXTENSION_NAME);
@@ -1235,7 +1237,8 @@ XrResult XRAPI_CALL Layer_xrCreateApiLayerInstance(const XrInstanceCreateInfo* i
     }
     if (XR_FAILED(result)) return result;
     auto enabled = [&](const char* name) {
-        return std::any_of(extensions.begin(), extensions.end(), [&](const char* ext) { return std::strcmp(ext, name) == 0; });
+        return std::any_of(extensions.begin(), extensions.end(),
+                           [&](const char* ext) { return std::strcmp(ext, name) == 0; });
     };
     const bool addedTime = !appHasTime && enabled(timeExtension);
 
@@ -1268,8 +1271,8 @@ XrResult XRAPI_CALL Layer_xrCreateApiLayerInstance(const XrInstanceCreateInfo* i
     LoadNext(gipa, *instance, "xrLocateSpaces", &next.LocateSpaces);
     LoadNext(gipa, *instance, "xrLocateSpacesKHR", &next.LocateSpacesKHR);
     if (addedTime || appHasTime) LoadNext(gipa, *instance, timeFunction, &next.ConvertTime);
-    Log("instance created: spatial_container=%d self_rendering=%d time_conversion=%d overlay=%d", containers,
-        selfRendering, next.ConvertTime != nullptr, inst->overlay);
+    Log("instance created: spatial_container=%d self_rendering=%d time_conversion=%d overlay=%d", containers, selfRendering,
+        next.ConvertTime != nullptr, inst->overlay);
 
     std::lock_guard<std::mutex> lock(g_mutex);
     g_instances[*instance] = std::move(inst);
