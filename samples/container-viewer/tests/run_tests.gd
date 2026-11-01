@@ -141,6 +141,19 @@ func test_placement_in_emulation_and_with_the_extension(viewer: Node3D) -> void:
 	_check(viewer.container_root.position == viewer.immersive_offset, "immersive with the extension uses the offset")
 
 
+func test_background_is_transparent_only_in_a_bounded_container(viewer: Node3D) -> void:
+	var environment: Environment = viewer.world_environment.environment
+	_check(not viewer.get_viewport().transparent_bg, "emulation: opaque")
+	_check(environment.background_mode == Environment.BG_COLOR, "emulation: solid background")
+	viewer.container_ext_active = true
+	viewer._apply_layout()
+	_check(viewer.get_viewport().transparent_bg, "bounded container: transparent")
+	_check(environment.background_mode == Environment.BG_CLEAR_COLOR, "bounded container: clear color")
+	viewer.bounds_mode = OpenXRSpatialContainerState.BOUNDS_MODE_IMMERSIVE
+	viewer._apply_layout()
+	_check(not viewer.get_viewport().transparent_bg, "immersive: opaque")
+
+
 func test_bounds_box_follows_the_mode(viewer: Node3D) -> void:
 	_check(viewer.bounds_box.visible, "box visible when bounded")
 	_key(viewer, KEY_B)

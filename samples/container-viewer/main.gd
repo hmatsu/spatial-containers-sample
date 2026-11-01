@@ -37,6 +37,7 @@ var show_bounds_box := true
 @onready var model_pivot: Node3D = $XROrigin3D/ContainerRoot/ModelPivot
 @onready var bounds_box: MeshInstance3D = $XROrigin3D/ContainerRoot/BoundsBox
 @onready var status_label: Label3D = $XROrigin3D/ContainerRoot/StatusLabel
+@onready var world_environment: WorldEnvironment = $WorldEnvironment
 
 
 func _ready() -> void:
@@ -266,8 +267,19 @@ func _apply_layout() -> void:
 	model.scale = Vector3.ONE * scale_factor
 	model.position = -model_center * scale_factor
 
+	_update_background(in_container_space)
 	_update_bounds_box()
 	_update_status()
+
+
+## In a bounded container, other apps and the surroundings show around the content,
+## so the background must be transparent. Elsewhere the app owns the whole view.
+## Godot marks the layer as alpha blended only when the runtime accepts the alpha
+## environment blend mode (requested in project.godot).
+func _update_background(transparent: bool) -> void:
+	get_viewport().transparent_bg = transparent
+	var environment: Environment = world_environment.environment
+	environment.background_mode = Environment.BG_CLEAR_COLOR if transparent else Environment.BG_COLOR
 
 
 func _update_bounds_box() -> void:

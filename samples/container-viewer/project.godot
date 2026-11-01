@@ -17,9 +17,14 @@ settings/stdout/verbose_stdout=true
 
 window/vsync/vsync_mode=0
 
+[rendering]
+
+environment/defaults/default_clear_color=Color(0, 0, 0, 0)
+
 [xr]
 
 openxr/enabled=true
+openxr/environment_blend_mode=2
 openxr/reference_space=0
 openxr/extensions/spatial_container/enabled=true
 openxr/extensions/spatial_container/bounds_mode=0
